@@ -55,6 +55,51 @@ function barajarFijo(arr, semilla = 12345) {
   return copia;
 }
 
+// --- Niveles de claridad de las pistas ---
+// 1 = Difícil, 2 = Entendible, 3 = Clara
+function nivelDePista(pista) {
+  const etiqueta = pista.split(":")[0].trim();
+  const obtusas = ["Grupo espacial", "Grupo puntual", "Sistema", "Densidad"];
+  const claras = ["Raya", "Color", "Fórmula"];
+  if (obtusas.includes(etiqueta)) return 1;
+  if (claras.includes(etiqueta)) return 3;
+  return 2; // Familia, Dureza, Dureza (Mohs), Brillo
+}
+
+// Ordena las pistas con reparto fijo [obtusa,obtusa,media,media,clara],
+// eligiendo al azar dentro de cada nivel con la semilla del día.
+function ordenarPistas(objeto, semilla) {
+  const niveles = { 1: [], 2: [], 3: [] };
+  for (const p of objeto.pistas) niveles[nivelDePista(p)].push(p);
+
+  niveles[1] = barajarFijo(niveles[1], semilla + 1);
+  niveles[2] = barajarFijo(niveles[2], semilla + 2);
+  niveles[3] = barajarFijo(niveles[3], semilla + 3);
+
+  // Toma una pista del nivel pedido; si está vacío, de cualquier otro
+  const tomar = (nivel) => {
+    if (niveles[nivel].length) return niveles[nivel].shift();
+    for (const n of [1, 2, 3]) if (niveles[n].length) return niveles[n].shift();
+    return null;
+  };
+
+  const plan = [1, 1, 2, 2, 3]; // reparto fijo de las 5 revelaciones
+  const orden = [];
+  for (const nivel of plan) {
+    const p = tomar(nivel);
+    if (p) orden.push(p);
+  }
+  for (const n of [1, 2, 3]) orden.push(...niveles[n]); // sobrantes al final
+  return orden;
+}
+
+// Punto de zoom aleatorio en zona central-media (30%–70%), fijo por día
+function puntoZoom(semilla) {
+  const r = prng(semilla + 99);
+  const enRango = () => Math.round(30 + r() * 40); // 30..70
+  return { x: enRango(), y: enRango() };
+}
+
 // --- Baraja mensual: 31 objetos (20 populares + 11 del resto) ---
 // La semilla depende del mes, así que cada mes cambia el reparto.
 function poolDelMes(elementos, semilla) {
@@ -81,6 +126,16 @@ function objetoDelDia(elementos) {
   return pool[(dia - 1) % pool.length];
 }
 
+// Semilla del día (año+mes+día) → mismo orden de pistas para todos hoy
+function semillaDelDia() {
+  const hoy = new Date();
+  return (
+    hoy.getUTCFullYear() * 10000 +
+    (hoy.getUTCMonth() + 1) * 100 +
+    hoy.getUTCDate()
+  );
+}
+
 export default function App() {
   // --- Estado ---
   const [datos, setDatos] = useState(null);
@@ -89,12 +144,18 @@ export default function App() {
   const [guesses, setGuesses] = useState([]);
   const [estado, setEstado] = useState("jugando"); // jugando | ganado | perdido
 
-  // --- Carga inicial: datos + objeto del día (una sola vez) ---
+  // --- Carga inicial: datos + objeto del día con pistas y zoom por día ---
   useEffect(() => {
     getMinerales()
       .then((d) => {
         setDatos(d);
-        setMineral(objetoDelDia(d.minerales));
+        const obj = objetoDelDia(d.minerales);
+        const semilla = semillaDelDia();
+        setMineral({
+          ...obj,
+          pistas: ordenarPistas(obj, semilla),
+          origen: puntoZoom(semilla),
+        });
       })
       .catch(() => setError("No se pudieron cargar los minerales."));
   }, []);
@@ -127,7 +188,12 @@ export default function App() {
       if (similares.length > 0) estadoIntento = "partial";
     }
 
-    const nuevo = { nombre: respuesta, estado: estadoIntento, similares };
+    const nuevo = {
+      nombre: respuesta,
+      estado: estadoIntento,
+      similares,
+      imagen: elegido?.imagen || "",
+    };
     const lista = [...guesses, nuevo];
     setGuesses(lista);
 
@@ -149,6 +215,8 @@ export default function App() {
           imagen={mineral.imagen}
           fallos={fallos}
           maxIntentos={MAX_INTENTOS}
+          origen={mineral.origen}
+          revelado={estado !== "jugando"}
         />
         <StepTracker guesses={guesses} maxIntentos={MAX_INTENTOS} />
 

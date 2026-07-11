@@ -1,13 +1,13 @@
 // scripts/generar-minerales.mjs
-// Ejecuta:  node scripts/generar-minerales.mjs
-// Requiere Node 18+
 
 import { writeFileSync } from 'node:fs'
 
 const ENDPOINT = 'https://query.wikidata.org/sparql'
 
+// --- Consulta de MINERALES (especies, variedades, gemas) ---
 const QUERY_MINERALES = `
-SELECT ?mineral ?mineralLabel ?hardness ?crystalLabel ?formula ?density ?image ?sitelinks WHERE {
+SELECT ?mineral ?mineralLabel ?hardness ?crystalLabel ?formula ?density
+       ?streakLabel ?spaceLabel ?pointLabel ?image ?sitelinks WHERE {
   VALUES ?tipo { wd:Q12089225 wd:Q429795 wd:Q83437 }
   ?mineral wdt:P31 ?tipo .
   ?mineral wdt:P18 ?image .
@@ -16,12 +16,16 @@ SELECT ?mineral ?mineralLabel ?hardness ?crystalLabel ?formula ?density ?image ?
   OPTIONAL { ?mineral wdt:P556 ?crystal . }
   OPTIONAL { ?mineral wdt:P274 ?formula . }
   OPTIONAL { ?mineral wdt:P2054 ?density . }
+  OPTIONAL { ?mineral wdt:P534 ?streak . }   # color de la raya
+  OPTIONAL { ?mineral wdt:P690 ?space . }    # grupo espacial
+  OPTIONAL { ?mineral wdt:P589 ?point . }    # grupo puntual
   SERVICE wikibase:label { bd:serviceParam wikibase:language "es,en". }
 }
 ORDER BY DESC(?sitelinks)
 LIMIT 365
 `
 
+// --- Consulta de ROCAS (solo nombre + imagen) ---
 const QUERY_ROCAS = `
 SELECT ?rock ?rockLabel ?image ?sitelinks WHERE {
   ?rock wdt:P279* wd:Q8063 .
@@ -33,7 +37,7 @@ ORDER BY DESC(?sitelinks)
 LIMIT 120
 `
 
-// Pistas curadas para las rocas
+// Pistas curadas para las rocas (Wikidata no las da)
 const ROCAS_INFO = {
   granito:      { rocaTipo: 'Ígnea', textura: 'Grano grueso', composicion: 'Cuarzo, feldespato y mica' },
   basalto:      { rocaTipo: 'Ígnea', textura: 'Grano fino', composicion: 'Plagioclasa y piroxeno' },
@@ -53,8 +57,7 @@ const ROCAS_INFO = {
   toba:         { rocaTipo: 'Ígnea (piroclástica)', textura: 'Porosa compacta', composicion: 'Ceniza volcánica' },
 }
 
-// Color característico curado para minerales icónicos (por slug del nombre).
-// Solo los que tienen un color realmente distintivo; el resto se deja vacío.
+// Color característico curado para minerales icónicos
 const COLOR_INFO = {
   pirita: 'Amarillo latón', oro: 'Dorado', cobre: 'Rojizo metálico',
   malaquita: 'Verde', azurita: 'Azul', turquesa: 'Azul verdoso',
@@ -71,7 +74,7 @@ const COLOR_INFO = {
   lazurita: 'Azul', rutilo: 'Rojizo', calcopirita: 'Amarillo latón',
 }
 
-// Deduce la familia (clase química) a partir de la fórmula.
+// Deduce la familia (clase química) a partir de la fórmula
 function familiaDeFormula(formula) {
   if (!formula) return ''
   const f = formula
@@ -89,6 +92,22 @@ function familiaDeFormula(formula) {
   return ''
 }
 
+// Deriva el brillo a partir de la familia (solo casos claros)
+function brilloDeFamilia(familia) {
+  if (familia === 'Sulfuro' || familia === 'Elemento nativo') return 'Metálico'
+  if (['Silicato','Carbonato','Sulfato','Haluro','Fosfato'].includes(familia)) return 'No metálico (vítreo)'
+  return '' // óxidos y desconocidos: ambiguo, se deja vacío
+}
+
+// Categoría de dureza a partir del número de Mohs
+function categoriaDureza(dureza) {
+  const n = parseFloat(dureza)
+  if (!Number.isFinite(n)) return ''
+  if (n < 3) return 'Blando'
+  if (n <= 6) return 'Medio'
+  return 'Duro'
+}
+
 const SISTEMAS = [
   'triclínico', 'monoclínico', 'ortorrómbico',
   'tetragonal', 'trigonal', 'hexagonal', 'cúbico',
@@ -98,6 +117,10 @@ const limpiarSistema = (txt) => {
   const s = SISTEMAS.find((x) => t.includes(x))
   return s ? s[0].toUpperCase() + s.slice(1) : ''
 }
+
+// Limpia "space group P3₁21" → "P3₁21"
+const limpiarGrupoEspacial = (txt) =>
+  (txt || '').replace(/space group/i, '').trim()
 
 const capitalizar = (s) =>
   s ? s.charAt(0).toLocaleUpperCase('es') + s.slice(1) : s
@@ -109,7 +132,6 @@ const slug = (s) =>
 const miniatura = (url) =>
   `${url.replace('http://', 'https://')}?width=600`
 
-// Redondea la densidad a 1 decimal
 const fmtDensidad = (v) => {
   const n = parseFloat(v)
   return Number.isFinite(n) ? `${Math.round(n * 10) / 10} g/cm³` : ''
@@ -142,28 +164,38 @@ async function main() {
     if (vistos.has(id)) continue
     vistos.add(id)
 
-    const sistema  = limpiarSistema(f.crystalLabel?.value)
-    const dureza   = f.hardness?.value || ''
-    const formula  = f.formula?.value || ''
-    const densidad = fmtDensidad(f.density?.value)
-    const familia  = familiaDeFormula(formula)
-    const color    = COLOR_INFO[id] || ''
+    const sistema   = limpiarSistema(f.crystalLabel?.value)
+    const dureza    = f.hardness?.value || ''
+    const formula   = f.formula?.value || ''
+    const densidad  = fmtDensidad(f.density?.value)
+    const familia   = familiaDeFormula(formula)
+    const color     = COLOR_INFO[id] || ''
+    const raya      = f.streakLabel?.value || ''
+    const grupoEsp  = limpiarGrupoEspacial(f.spaceLabel?.value)
+    const grupoPto  = f.pointLabel?.value || ''
+    const brillo    = brilloDeFamilia(familia)
+    const durCat    = categoriaDureza(dureza)
 
-    // Pistas de mineral: de la MÁS VAGA a la MÁS REVELADORA
+    // Pistas: de la MÁS OBTUSA (técnica) a la MÁS CLARA (reveladora)
     const pistas = []
-    if (familia)  pistas.push(`Familia: ${familia}`)
-    if (sistema)  pistas.push(`Sistema: ${sistema}`)
-    if (densidad) pistas.push(`Densidad: ${densidad}`)
-    if (dureza)   pistas.push(`Dureza (Mohs): ${dureza}`)
-    if (color)    pistas.push(`Color: ${color}`)
-    if (formula)  pistas.push(`Fórmula: ${formula}`)
+    if (grupoEsp)  pistas.push(`Grupo espacial: ${grupoEsp}`)
+    if (grupoPto)  pistas.push(`Grupo puntual: ${grupoPto}`)
+    if (familia)   pistas.push(`Familia: ${familia}`)
+    if (sistema)   pistas.push(`Sistema: ${sistema}`)
+    if (densidad)  pistas.push(`Densidad: ${densidad}`)
+    if (durCat)    pistas.push(`Dureza: ${durCat}`)
+    if (brillo)    pistas.push(`Brillo: ${brillo}`)
+    if (dureza)    pistas.push(`Dureza (Mohs): ${dureza}`)
+    if (raya)      pistas.push(`Raya: ${raya}`)
+    if (color)     pistas.push(`Color: ${color}`)
+    if (formula)   pistas.push(`Fórmula: ${formula}`)
 
     if (pistas.length < 2) continue
 
     lista.push({
       id, nombre, tipo: 'mineral',
       imagen: miniatura(imagen),
-      familia, color, sistema, densidad,
+      familia, color, sistema, densidad, brillo, raya,
       pistas,
     })
   }
@@ -209,8 +241,8 @@ export const NOMBRES = [...MINERALS.map((m) => m.nombre)].sort()
 
   writeFileSync('src/data/minerals.js', contenido)
   const nRocas = ordenados.filter((m) => m.tipo === 'roca').length
-  const conColor = ordenados.filter((m) => m.color).length
-  console.log(`✔ ${ordenados.length} elementos (${nRocas} rocas, ${conColor} con color) en src/data/minerals.js`)
+  const conRaya = ordenados.filter((m) => m.raya).length
+  console.log(`✔ ${ordenados.length} elementos (${nRocas} rocas, ${conRaya} con raya) en src/data/minerals.js`)
 }
 
 main().catch((e) => {

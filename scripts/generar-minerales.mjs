@@ -130,7 +130,7 @@ const slug = (s) =>
    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 const miniatura = (url) =>
-  `${url.replace('http://', 'https://')}?width=600`
+  `${url.replace('http://', 'https://')}?width=1200`
 
 const fmtDensidad = (v) => {
   const n = parseFloat(v)

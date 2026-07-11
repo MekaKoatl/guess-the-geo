@@ -2,8 +2,8 @@ export default function HintPanel({ pistas = [], reveladas = 0 }) {
   const visibles = pistas.slice(0, reveladas)
 
   return (
-    <aside className="absolute left-6 top-20 w-64 bg-neutral-200 rounded p-4">
-      <h1>Pistas</h1>
+    <aside className="w-64 bg-neutral-200 rounded p-4 self-start shrink-0">
+      <h2 className="font-medium mb-2">Pistas</h2>
       {visibles.length === 0 ? (
         <p className="text-sm text-neutral-500">
           Falla un intento para revelar una pista.

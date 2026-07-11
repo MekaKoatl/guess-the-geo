@@ -5,19 +5,25 @@ import RockViewer from "./components/RockViewer";
 import StepTracker from "./components/StepTracker";
 import GuessForm from "./components/GuessForm";
 import GuessHistory from "./components/GuessHistory";
+import Countdown from "./components/Countdown";
 import { getMinerales } from "./api/minerals";
+import { guardarPartida, cargarPartida } from "./api/storage";
+import ResultCard from "./components/ResultCard";
 
-// --- Config del juego ---
+// === CONFIG ===
 const MAX_INTENTOS = 6;
-const N_POPULARES = 20;      // objetos populares por mes
-const N_RESTO = 11;          // objetos del resto por mes
-const CORTE_POPULARES = 40;  // "populares" = top 40 minerales + todas las rocas
+const N_POPULARES = 20;
+const N_RESTO = 11;
+const CORTE_POPULARES = 40;
 
-// Normaliza texto para comparar (sin tildes, minúsculas)
 const norm = (s) =>
-  s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
-// --- Comparación para el estado "parcial" (amarillo) ---
+// === COMPARACIÓN PARCIAL (amarillo) ===
 const CAMPOS = [
   { key: "familia", label: "Misma familia" },
   { key: "color", label: "Mismo color" },
@@ -30,11 +36,11 @@ function coincidencias(elegido, objetivo) {
   return CAMPOS.filter((c) => {
     const a = norm(elegido[c.key] || "");
     const b = norm(objetivo[c.key] || "");
-    return a && a === b; // ambos no vacíos e iguales
+    return a && a === b;
   }).map((c) => c.label);
 }
 
-// --- Aleatorio determinista (misma semilla = misma secuencia) ---
+// === ALEATORIO DETERMINISTA ===
 function prng(seed) {
   return function () {
     seed |= 0;
@@ -55,19 +61,16 @@ function barajarFijo(arr, semilla = 12345) {
   return copia;
 }
 
-// --- Niveles de claridad de las pistas ---
-// 1 = Difícil, 2 = Entendible, 3 = Clara
+// === PISTAS POR NIVEL (1=difícil, 2=media, 3=clara) ===
 function nivelDePista(pista) {
   const etiqueta = pista.split(":")[0].trim();
   const obtusas = ["Grupo espacial", "Grupo puntual", "Sistema", "Densidad"];
   const claras = ["Raya", "Color", "Fórmula"];
   if (obtusas.includes(etiqueta)) return 1;
   if (claras.includes(etiqueta)) return 3;
-  return 2; // Familia, Dureza, Dureza (Mohs), Brillo
+  return 2;
 }
 
-// Ordena las pistas con reparto fijo [obtusa,obtusa,media,media,clara],
-// eligiendo al azar dentro de cada nivel con la semilla del día.
 function ordenarPistas(objeto, semilla) {
   const niveles = { 1: [], 2: [], 3: [] };
   for (const p of objeto.pistas) niveles[nivelDePista(p)].push(p);
@@ -76,32 +79,29 @@ function ordenarPistas(objeto, semilla) {
   niveles[2] = barajarFijo(niveles[2], semilla + 2);
   niveles[3] = barajarFijo(niveles[3], semilla + 3);
 
-  // Toma una pista del nivel pedido; si está vacío, de cualquier otro
   const tomar = (nivel) => {
     if (niveles[nivel].length) return niveles[nivel].shift();
     for (const n of [1, 2, 3]) if (niveles[n].length) return niveles[n].shift();
     return null;
   };
 
-  const plan = [1, 1, 2, 2, 3]; // reparto fijo de las 5 revelaciones
+  const plan = [1, 1, 2, 2, 3]; // reparto de las 5 revelaciones
   const orden = [];
   for (const nivel of plan) {
     const p = tomar(nivel);
     if (p) orden.push(p);
   }
-  for (const n of [1, 2, 3]) orden.push(...niveles[n]); // sobrantes al final
+  for (const n of [1, 2, 3]) orden.push(...niveles[n]);
   return orden;
 }
 
-// Punto de zoom aleatorio en zona central-media (30%–70%), fijo por día
 function puntoZoom(semilla) {
   const r = prng(semilla + 99);
   const enRango = () => Math.round(30 + r() * 40); // 30..70
   return { x: enRango(), y: enRango() };
 }
 
-// --- Baraja mensual: 31 objetos (20 populares + 11 del resto) ---
-// La semilla depende del mes, así que cada mes cambia el reparto.
+// === OBJETO DEL DÍA (baraja mensual: 20 populares + 11 del resto) ===
 function poolDelMes(elementos, semilla) {
   const rocas = elementos.filter((m) => m.tipo === "roca");
   const minerales = elementos.filter((m) => m.tipo === "mineral");
@@ -115,7 +115,6 @@ function poolDelMes(elementos, semilla) {
   return barajarFijo([...elegidosPop, ...elegidosResto], semilla + 2);
 }
 
-// --- Objeto del día (mismo para todos, cambia cada día y cada mes) ---
 function objetoDelDia(elementos) {
   const hoy = new Date();
   const anio = hoy.getUTCFullYear();
@@ -126,7 +125,6 @@ function objetoDelDia(elementos) {
   return pool[(dia - 1) % pool.length];
 }
 
-// Semilla del día (año+mes+día) → mismo orden de pistas para todos hoy
 function semillaDelDia() {
   const hoy = new Date();
   return (
@@ -137,14 +135,14 @@ function semillaDelDia() {
 }
 
 export default function App() {
-  // --- Estado ---
+  // === ESTADO ===
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
-  const [mineral, setMineral] = useState(null); // objetivo del día
+  const [mineral, setMineral] = useState(null);
   const [guesses, setGuesses] = useState([]);
   const [estado, setEstado] = useState("jugando"); // jugando | ganado | perdido
 
-  // --- Carga inicial: datos + objeto del día con pistas y zoom por día ---
+  // === CARGA INICIAL (datos + objeto del día + partida guardada) ===
   useEffect(() => {
     getMinerales()
       .then((d) => {
@@ -156,6 +154,13 @@ export default function App() {
           pistas: ordenarPistas(obj, semilla),
           origen: puntoZoom(semilla),
         });
+
+        // Restaurar la partida si es de hoy
+        const guardada = cargarPartida();
+        if (guardada) {
+          setGuesses(guardada.guesses);
+          setEstado(guardada.estado);
+        }
       })
       .catch(() => setError("No se pudieron cargar los minerales."));
   }, []);
@@ -169,7 +174,7 @@ export default function App() {
 
   const fallos = guesses.length;
 
-  // --- Procesa cada intento (acierto / parcial / fallo + fin de juego) ---
+  // === PROCESAR INTENTO ===
   function manejarIntento(respuesta) {
     if (estado !== "jugando") return;
 
@@ -197,46 +202,56 @@ export default function App() {
     const lista = [...guesses, nuevo];
     setGuesses(lista);
 
+    let nuevoEstado = estado;
     if (acierto) {
-      setEstado("ganado");
+      nuevoEstado = "ganado";
     } else if (lista.length >= MAX_INTENTOS) {
-      setEstado("perdido");
+      nuevoEstado = "perdido";
     }
+    setEstado(nuevoEstado);
+    guardarPartida(lista, nuevoEstado);
   }
 
-  // --- Render ---
+  // === RENDER (3 columnas: pistas | juego | buscador + intentos) ===
   return (
-    <div className="min-h-screen bg-white text-neutral-900">
-      <HintPanel pistas={mineral.pistas} reveladas={fallos} />
+    <div className="min-h-screen bg-white text-neutral-900 p-6">
+      <div className="flex justify-center gap-6">
+        <HintPanel pistas={mineral.pistas} reveladas={fallos} />
 
-      <main className="max-w-xl mx-auto pt-6 px-4">
-        <Header />
-        <RockViewer
-          imagen={mineral.imagen}
-          fallos={fallos}
-          maxIntentos={MAX_INTENTOS}
-          origen={mineral.origen}
-          revelado={estado !== "jugando"}
-        />
-        <StepTracker guesses={guesses} maxIntentos={MAX_INTENTOS} />
+        <main className="w-full max-w-md">
+          <Header />
+          <RockViewer
+            imagen={mineral.imagen}
+            tipo={mineral.tipo}
+            fallos={fallos}
+            maxIntentos={MAX_INTENTOS}
+            origen={mineral.origen}
+            revelado={estado !== "jugando"}
+          />
+          <StepTracker guesses={guesses} maxIntentos={MAX_INTENTOS} />
 
-        {estado === "jugando" && (
-          <GuessForm onGuess={manejarIntento} opciones={datos.nombres} />
-        )}
+        {estado !== "jugando" && (
+            <ResultCard
+              objeto={mineral}
+              estado={estado}
+              intentos={guesses.length}
+            />
+          )}
 
-        {estado === "ganado" && (
-          <p className="mt-4 text-center text-green-700 font-medium">
-            ¡Correcto! Era {mineral.nombre}.
-          </p>
-        )}
-        {estado === "perdido" && (
-          <p className="mt-4 text-center text-red-700 font-medium">
-            Se acabaron los intentos. Era {mineral.nombre}.
-          </p>
-        )}
+          <Countdown />
+        </main>
 
-        <GuessHistory guesses={guesses} />
-      </main>
+        <div className="w-80 shrink-0 self-start space-y-4">
+          {estado === "jugando" && (
+            <GuessForm
+              onGuess={manejarIntento}
+              opciones={datos.nombres}
+              usados={guesses.map((g) => g.nombre)}
+            />
+          )}
+          <GuessHistory guesses={guesses} />
+        </div>
+      </div>
     </div>
   );
 }

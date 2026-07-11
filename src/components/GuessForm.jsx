@@ -3,29 +3,33 @@ import { useState } from 'react'
 const norm = (s) =>
   s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
-export default function GuessForm({ onGuess, opciones = [] }) {
+export default function GuessForm({ onGuess, opciones = [], usados = [] }) {
   const [texto, setTexto] = useState('')
   const [aviso, setAviso] = useState(false)
 
-  // Sugerencias que coinciden con lo escrito
+  
+  const disponibles = opciones.filter(
+    (n) => !usados.some((u) => norm(u) === norm(n))
+  )
+
+ 
   const sugerencias = texto.trim()
-    ? opciones.filter((n) => norm(n).includes(norm(texto))).slice(0, 6)
+    ? disponibles.filter((n) => norm(n).includes(norm(texto))).slice(0, 25)
     : []
 
   function enviar(valor) {
-    // Si viene un valor (clic en sugerencia), ese manda.
-    // Si no, intentamos validar el texto escrito.
+    
     let respuesta = valor
 
     if (!respuesta) {
       const t = norm(texto)
-      // ¿Coincide exactamente con una opción?
-      const exacta = opciones.find((n) => norm(n) === t)
-      // Si no, tomamos la primera sugerencia disponible
+      // ¿Coincide?
+      const exacta = disponibles.find((n) => norm(n) === t)
+      // 
       respuesta = exacta || sugerencias[0]
     }
 
-    // Si no hay respuesta válida, avisamos y no enviamos
+    // 
     if (!respuesta) {
       setAviso(true)
       return
@@ -65,7 +69,7 @@ export default function GuessForm({ onGuess, opciones = [] }) {
       )}
 
       {sugerencias.length > 0 && (
-        <ul className="absolute z-10 w-full bg-white border border-neutral-300 rounded mt-1 shadow">
+        <ul className="absolute z-10 w-full bg-white border border-neutral-300 rounded mt-1 shadow max-h-36 overflow-y-auto">
           {sugerencias.map((s) => (
             <li key={s}>
               <button

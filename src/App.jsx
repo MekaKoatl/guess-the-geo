@@ -6,9 +6,15 @@ import StepTracker from "./components/StepTracker";
 import GuessForm from "./components/GuessForm";
 import GuessHistory from "./components/GuessHistory";
 import Countdown from "./components/Countdown";
-import { getMinerales } from "./api/minerals";
-import { guardarPartida, cargarPartida } from "./api/storage";
 import ResultCard from "./components/ResultCard";
+import StatsPanel from "./components/StatsPanel";
+import { getMinerales } from "./api/minerals";
+import {
+  guardarPartida,
+  cargarPartida,
+  cargarStats,
+  registrarResultado,
+} from "./api/storage";
 
 // === CONFIG ===
 const MAX_INTENTOS = 6;
@@ -141,6 +147,7 @@ export default function App() {
   const [mineral, setMineral] = useState(null);
   const [guesses, setGuesses] = useState([]);
   const [estado, setEstado] = useState("jugando"); // jugando | ganado | perdido
+  const [stats, setStats] = useState(cargarStats());
 
   // === CARGA INICIAL (datos + objeto del día + partida guardada) ===
   useEffect(() => {
@@ -210,6 +217,11 @@ export default function App() {
     }
     setEstado(nuevoEstado);
     guardarPartida(lista, nuevoEstado);
+
+    // Si la partida terminó, registrar en estadísticas
+    if (nuevoEstado !== "jugando") {
+      setStats(registrarResultado(nuevoEstado === "ganado", lista.length));
+    }
   }
 
   // === RENDER (3 columnas: pistas | juego | buscador + intentos) ===
@@ -230,12 +242,19 @@ export default function App() {
           />
           <StepTracker guesses={guesses} maxIntentos={MAX_INTENTOS} />
 
-        {estado !== "jugando" && (
-            <ResultCard
-              objeto={mineral}
-              estado={estado}
-              intentos={guesses.length}
-            />
+          {estado !== "jugando" && (
+           <>
+              <ResultCard
+                objeto={mineral}
+                estado={estado}
+                intentos={guesses.length}
+              />
+              <StatsPanel
+                stats={stats}
+                guesses={guesses}
+                gano={estado === "ganado"}
+              />
+            </>
           )}
 
           <Countdown />

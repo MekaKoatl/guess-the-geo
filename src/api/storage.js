@@ -1,34 +1,34 @@
-const CLAVE = "guess-the-geo:partida";
+const CLAVE = "guess-the-geo:partidas";
 
-// Fecha de hoy en UTC
 export function fechaHoy() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, 10); // "2026-07-14"
 }
 
-// Guarda la partida de hoy
-export function guardarPartida(guesses, estado) {
-  try {
-    const datos = { fecha: fechaHoy(), guesses, estado };
-    localStorage.setItem(CLAVE, JSON.stringify(datos));
-  } catch {
-    // Si el navegador bloquea localStorage, seguimos sin guardar
-  }
-}
-
-// 
-export function cargarPartida() {
+// Todas las partidas guardadas, indexadas por fecha
+export function cargarPartidas() {
   try {
     const crudo = localStorage.getItem(CLAVE);
-    if (!crudo) return null;
-
-    const datos = JSON.parse(crudo);
-    if (datos.fecha !== fechaHoy()) return null; // es de otro día
-
-    return datos;
+    return crudo ? JSON.parse(crudo) : {};
   } catch {
-    return null;
+    return {};
   }
+}
+
+// Guarda la partida de una fecha concreta
+export function guardarPartida(fecha, guesses, estado) {
+  try {
+    const todas = cargarPartidas();
+    todas[fecha] = { guesses, estado };
+    localStorage.setItem(CLAVE, JSON.stringify(todas));
+  } catch {
+    // sin almacenamiento: seguimos sin guardar
+  }
+}
+
+// Devuelve la partida de una fecha, o null
+export function cargarPartida(fecha) {
+  const todas = cargarPartidas();
+  return todas[fecha] || null;
 }
 
 const CLAVE_STATS = "guess-the-geo:stats";

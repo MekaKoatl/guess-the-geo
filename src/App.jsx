@@ -12,8 +12,10 @@ import { getMinerales } from "./api/minerals";
 import {
   guardarPartida,
   cargarPartida,
+  cargarPartidas,
   cargarStats,
   registrarResultado,
+  fechaHoy,
 } from "./api/storage";
 
 // === CONFIG ===
@@ -121,25 +123,23 @@ function poolDelMes(elementos, semilla) {
   return barajarFijo([...elegidosPop, ...elegidosResto], semilla + 2);
 }
 
-function objetoDelDia(elementos) {
-  const hoy = new Date();
-  const anio = hoy.getUTCFullYear();
-  const mes = hoy.getUTCMonth() + 1;
-  const dia = hoy.getUTCDate();
+function objetoDelDia(elementos, fecha) {
+  const d = new Date(fecha + "T00:00:00Z");
+  const anio = d.getUTCFullYear();
+  const mes = d.getUTCMonth() + 1;
+  const dia = d.getUTCDate();
 
   const pool = poolDelMes(elementos, anio * 100 + mes);
   return pool[(dia - 1) % pool.length];
 }
 
-function semillaDelDia() {
-  const hoy = new Date();
+
+function semillaDelDia(fecha) {
+  const d = new Date(fecha + "T00:00:00Z");
   return (
-    hoy.getUTCFullYear() * 10000 +
-    (hoy.getUTCMonth() + 1) * 100 +
-    hoy.getUTCDate()
+    d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate()
   );
 }
-
 export default function App() {
   // === ESTADO ===
   const [datos, setDatos] = useState(null);
@@ -148,29 +148,28 @@ export default function App() {
   const [guesses, setGuesses] = useState([]);
   const [estado, setEstado] = useState("jugando"); // jugando | ganado | perdido
   const [stats, setStats] = useState(cargarStats());
+  const [fecha, setFecha] = useState(fechaHoy()); // día que se está jugando
 
   // === CARGA INICIAL (datos + objeto del día + partida guardada) ===
   useEffect(() => {
     getMinerales()
       .then((d) => {
         setDatos(d);
-        const obj = objetoDelDia(d.minerales);
-        const semilla = semillaDelDia();
+        const obj = objetoDelDia(d.minerales, fecha);
+        const semilla = semillaDelDia(fecha);
         setMineral({
           ...obj,
           pistas: ordenarPistas(obj, semilla),
           origen: puntoZoom(semilla),
         });
 
-        // Restaurar la partida si es de hoy
-        const guardada = cargarPartida();
-        if (guardada) {
-          setGuesses(guardada.guesses);
-          setEstado(guardada.estado);
-        }
+        // Restaurar la partida de ESE día (si existe)
+        const guardada = cargarPartida(fecha);
+        setGuesses(guardada ? guardada.guesses : []);
+        setEstado(guardada ? guardada.estado : "jugando");
       })
       .catch(() => setError("No se pudieron cargar los minerales."));
-  }, []);
+  }, [fecha]);   // ← se vuelve a ejecutar si cambia la fecha
 
   if (error) {
     return <p className="p-6 text-center text-red-700">{error}</p>;
@@ -218,8 +217,11 @@ export default function App() {
     setEstado(nuevoEstado);
     guardarPartida(lista, nuevoEstado);
 
-    // Si la partida terminó, registrar en estadísticas
-    if (nuevoEstado !== "jugando") {
+   setEstado(nuevoEstado);
+    guardarPartida(fecha, lista, nuevoEstado);
+
+    // Solo la partida de HOY cuenta para las estadísticas y la racha
+    if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
       setStats(registrarResultado(nuevoEstado === "ganado", lista.length));
     }
   }

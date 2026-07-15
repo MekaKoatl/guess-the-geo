@@ -17,12 +17,15 @@ import {
   registrarResultado,
   fechaHoy,
 } from "./api/storage";
+import DayList from "./components/DayList";
 
 // === CONFIG ===
 const MAX_INTENTOS = 6;
 const N_POPULARES = 20;
 const N_RESTO = 11;
 const CORTE_POPULARES = 40;
+
+const FECHA_LANZAMIENTO = "2026-07-01"; // primer día jugable del juego
 
 const norm = (s) =>
   s
@@ -133,13 +136,35 @@ function objetoDelDia(elementos, fecha) {
   return pool[(dia - 1) % pool.length];
 }
 
-
 function semillaDelDia(fecha) {
   const d = new Date(fecha + "T00:00:00Z");
   return (
     d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate()
   );
 }
+
+// Lista de días desde el lanzamiento hasta hoy, con el estado de cada uno
+function listaDeDias(partidas) {
+  const dias = [];
+  const hoy = new Date(fechaHoy() + "T00:00:00Z");
+  const inicio = new Date(FECHA_LANZAMIENTO + "T00:00:00Z");
+
+  for (let d = new Date(hoy); d >= inicio; d.setUTCDate(d.getUTCDate() - 1)) {
+    const fecha = d.toISOString().slice(0, 10);
+    const partida = partidas[fecha]; // puede no existir
+
+    let estado = "sin-jugar";
+    if (partida) estado = partida.estado; // jugando | ganado | perdido
+
+    dias.push({
+      fecha,
+      estado, // sin-jugar | jugando | ganado | perdido
+      guesses: partida ? partida.guesses : [],
+    });
+  }
+  return dias; // de hoy hacia atrás
+}
+
 export default function App() {
   // === ESTADO ===
   const [datos, setDatos] = useState(null);
@@ -149,6 +174,7 @@ export default function App() {
   const [estado, setEstado] = useState("jugando"); // jugando | ganado | perdido
   const [stats, setStats] = useState(cargarStats());
   const [fecha, setFecha] = useState(fechaHoy()); // día que se está jugando
+  const [vista, setVista] = useState("juego"); // juego | listado
 
   // === CARGA INICIAL (datos + objeto del día + partida guardada) ===
   useEffect(() => {
@@ -169,7 +195,7 @@ export default function App() {
         setEstado(guardada ? guardada.estado : "jugando");
       })
       .catch(() => setError("No se pudieron cargar los minerales."));
-  }, [fecha]);   // ← se vuelve a ejecutar si cambia la fecha
+  }, [fecha]); // se vuelve a ejecutar si cambia la fecha
 
   if (error) {
     return <p className="p-6 text-center text-red-700">{error}</p>;
@@ -215,15 +241,34 @@ export default function App() {
       nuevoEstado = "perdido";
     }
     setEstado(nuevoEstado);
-    guardarPartida(lista, nuevoEstado);
-
-   setEstado(nuevoEstado);
     guardarPartida(fecha, lista, nuevoEstado);
 
     // Solo la partida de HOY cuenta para las estadísticas y la racha
     if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
       setStats(registrarResultado(nuevoEstado === "ganado", lista.length));
     }
+  }
+
+  function irADia(nuevaFecha) {
+    setFecha(nuevaFecha); // dispara la recarga del useEffect
+    setVista("juego");
+  }
+
+  // === VISTA DE LISTADO (días anteriores) ===
+  if (vista === "listado") {
+    return (
+      <div className="min-h-screen bg-white text-neutral-900 p-6">
+        <DayList
+          dias={listaDeDias(cargarPartidas())}
+          hoy={fechaHoy()}
+          onElegirDia={irADia}
+          onVolver={() => {
+            setFecha(fechaHoy());
+            setVista("juego");
+          }}
+        />
+      </div>
+    );
   }
 
   // === RENDER (3 columnas: pistas | juego | buscador + intentos) ===
@@ -234,6 +279,12 @@ export default function App() {
 
         <main className="w-full max-w-md">
           <Header />
+          <button
+            onClick={() => setVista("listado")}
+            className="text-sm underline mb-2"
+          >
+            Ver días anteriores
+          </button>
           <RockViewer
             imagen={mineral.imagen}
             tipo={mineral.tipo}
@@ -245,7 +296,7 @@ export default function App() {
           <StepTracker guesses={guesses} maxIntentos={MAX_INTENTOS} />
 
           {estado !== "jugando" && (
-           <>
+            <>
               <ResultCard
                 objeto={mineral}
                 estado={estado}

@@ -18,6 +18,7 @@ import {
   fechaHoy,
 } from "./api/storage";
 import DayList from "./components/DayList";
+ import { iniciarSesion } from "./api/backend";
 
 // === CONFIG ===
 const MAX_INTENTOS = 6;
@@ -197,6 +198,12 @@ export default function App() {
       .catch(() => setError("No se pudieron cargar los minerales."));
   }, [fecha]); // se vuelve a ejecutar si cambia la fecha
 
+  useEffect(() => {
+  iniciarSesion("carlos@ejemplo.com", "123456")
+    .then((r) => console.log("LOGIN OK:", r))
+    .catch((e) => console.log("LOGIN ERROR:", e.message));
+}, []);
+
   if (error) {
     return <p className="p-6 text-center text-red-700">{error}</p>;
   }
@@ -326,4 +333,6 @@ export default function App() {
       </div>
     </div>
   );
+
+  
 }

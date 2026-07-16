@@ -59,3 +59,11 @@ export function registrarResultadoBackend(token, gano, intentos) {
     body: { gano, intentos },
   });
 }
+
+export function importarStatsBackend(token, stats) {
+  return pedir("/api/stats/importar", {
+    metodo: "POST",
+    token,
+    body: { stats },
+  });
+}

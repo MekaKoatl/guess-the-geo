@@ -84,3 +84,31 @@ export function registrarResultado(gano, intentos) {
     return cargarStats();
   }
 }
+
+// === SESIÓN (token + usuario logueado) ===
+const CLAVE_SESION = "guess-the-geo:sesion";
+
+export function guardarSesion(token, user) {
+  try {
+    localStorage.setItem(CLAVE_SESION, JSON.stringify({ token, user }));
+  } catch {
+    // sin almacenamiento: la sesión no persiste
+  }
+}
+
+export function cargarSesion() {
+  try {
+    const crudo = localStorage.getItem(CLAVE_SESION);
+    return crudo ? JSON.parse(crudo) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function borrarSesion() {
+  try {
+    localStorage.removeItem(CLAVE_SESION);
+  } catch {
+    // nada que hacer
+  }
+}

@@ -16,9 +16,20 @@ import {
   cargarStats,
   registrarResultado,
   fechaHoy,
+  guardarSesion,
+  cargarSesion,
+  borrarSesion,
 } from "./api/storage";
 import DayList from "./components/DayList";
- import { iniciarSesion } from "./api/backend";
+import {
+  iniciarSesion,
+  cargarStatsBackend,
+  cargarPartidasBackend,
+  guardarPartidaBackend,
+  registrarResultadoBackend,
+  importarStatsBackend,
+} from "./api/backend";
+import AuthPanel from "./components/AuthPanel";
 
 // === CONFIG ===
 const MAX_INTENTOS = 6;
@@ -176,6 +187,8 @@ export default function App() {
   const [stats, setStats] = useState(cargarStats());
   const [fecha, setFecha] = useState(fechaHoy()); // día que se está jugando
   const [vista, setVista] = useState("juego"); // juego | listado
+  const [sesion, setSesion] = useState(cargarSesion()); // { token, user } o null
+  const [mostrarAuth, setMostrarAuth] = useState(false);
 
   // === CARGA INICIAL (datos + objeto del día + partida guardada) ===
   useEffect(() => {
@@ -198,11 +211,26 @@ export default function App() {
       .catch(() => setError("No se pudieron cargar los minerales."));
   }, [fecha]); // se vuelve a ejecutar si cambia la fecha
 
+  // Al iniciar sesión: traer partidas y stats del backend
   useEffect(() => {
-  iniciarSesion("carlos@ejemplo.com", "123456")
-    .then((r) => console.log("LOGIN OK:", r))
-    .catch((e) => console.log("LOGIN ERROR:", e.message));
-}, []);
+    if (!sesion) return; // invitado: no hay nada que traer
+
+    // Stats del usuario
+    cargarStatsBackend(sesion.token)
+      .then((s) => setStats(s))
+      .catch((e) => console.log("Error stats backend:", e.message));
+
+    // Partida del día actual (de las partidas del usuario)
+    cargarPartidasBackend(sesion.token)
+      .then((partidas) => {
+        const deHoy = partidas.find((p) => p.fecha === fecha);
+        if (deHoy) {
+          setGuesses(deHoy.guesses);
+          setEstado(deHoy.estado);
+        }
+      })
+      .catch((e) => console.log("Error partidas backend:", e.message));
+  }, [sesion, fecha]);
 
   if (error) {
     return <p className="p-6 text-center text-red-700">{error}</p>;
@@ -248,17 +276,75 @@ export default function App() {
       nuevoEstado = "perdido";
     }
     setEstado(nuevoEstado);
-    guardarPartida(fecha, lista, nuevoEstado);
 
-    // Solo la partida de HOY cuenta para las estadísticas y la racha
-    if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
-      setStats(registrarResultado(nuevoEstado === "ganado", lista.length));
+    if (sesion) {
+      // Con sesión: guardar en el backend
+      guardarPartidaBackend(sesion.token, fecha, lista, nuevoEstado).catch(
+        (e) => console.log("Error guardando partida:", e.message),
+      );
+
+      // Solo la partida de HOY cuenta para stats
+      if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
+        registrarResultadoBackend(
+          sesion.token,
+          nuevoEstado === "ganado",
+          lista.length,
+        )
+          .then((s) => setStats(s))
+          .catch((e) => console.log("Error registrando stats:", e.message));
+      }
+    } else {
+      // Invitado: guardar en localStorage (como antes)
+      guardarPartida(fecha, lista, nuevoEstado);
+      if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
+        setStats(registrarResultado(nuevoEstado === "ganado", lista.length));
+      }
     }
   }
 
   function irADia(nuevaFecha) {
     setFecha(nuevaFecha); // dispara la recarga del useEffect
     setVista("juego");
+  }
+
+  // Sube los datos locales al backend SOLO si la cuenta está vacía
+  async function migrarDatosLocales(token) {
+    try {
+      const [partidasBackend, statsBackend] = await Promise.all([
+        cargarPartidasBackend(token),
+        cargarStatsBackend(token),
+      ]);
+
+      const backendVacio =
+        partidasBackend.length === 0 && statsBackend.jugadas === 0;
+      if (!backendVacio) return; // el backend ya tiene datos: no migrar
+
+      // Subir cada partida local
+      const locales = cargarPartidas(); // { "2026-07-14": { guesses, estado }, ... }
+      for (const [f, p] of Object.entries(locales)) {
+        await guardarPartidaBackend(token, f, p.guesses, p.estado);
+      }
+
+      // Subir stats locales
+      const statsLocales = cargarStats();
+      if (statsLocales.jugadas > 0) {
+        await importarStatsBackend(token, statsLocales);
+      }
+    } catch (e) {
+      console.log("Error migrando datos locales:", e.message);
+    }
+  }
+  
+  async function alIniciarSesion(token, user) {
+    guardarSesion(token, user);
+    await migrarDatosLocales(token); // subir lo local si el backend está vacío
+    setSesion({ token, user }); // dispara la carga desde el backend
+    setMostrarAuth(false);
+  }
+
+  function cerrarSesion() {
+    borrarSesion();
+    setSesion(null);
   }
 
   // === VISTA DE LISTADO (días anteriores) ===
@@ -281,6 +367,24 @@ export default function App() {
   // === RENDER (3 columnas: pistas | juego | buscador + intentos) ===
   return (
     <div className="min-h-screen bg-white text-neutral-900 p-6">
+      {/* Barra superior de sesión */}
+      <div className="max-w-5xl mx-auto flex justify-end mb-4">
+        {sesion ? (
+          <div className="flex items-center gap-3 text-sm">
+            <span>Hola, {sesion.user.username}</span>
+            <button onClick={cerrarSesion} className="underline">
+              Cerrar sesión
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setMostrarAuth(true)}
+            className="text-sm bg-blue-600 text-white rounded px-3 py-1"
+          >
+            Iniciar sesión
+          </button>
+        )}
+      </div>
       <div className="flex justify-center gap-6">
         <HintPanel pistas={mineral.pistas} reveladas={fallos} />
 
@@ -316,10 +420,8 @@ export default function App() {
               />
             </>
           )}
-
           <Countdown />
         </main>
-
         <div className="w-80 shrink-0 self-start space-y-4">
           {estado === "jugando" && (
             <GuessForm
@@ -331,8 +433,12 @@ export default function App() {
           <GuessHistory guesses={guesses} />
         </div>
       </div>
+      {mostrarAuth && (
+        <AuthPanel
+          onSesion={alIniciarSesion}
+          onCerrar={() => setMostrarAuth(false)}
+        />
+      )}
     </div>
   );
-
-  
 }

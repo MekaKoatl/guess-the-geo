@@ -1,8 +1,7 @@
-export default function StatsPanel({ stats, guesses, gano }) {
+export default function StatsPanel({ stats, guesses, gano, sesion, fecha }) {
   const porcentaje =
     stats.jugadas > 0 ? Math.round((stats.ganadas / stats.jugadas) * 100) : 0;
 
-  // Texto para compartir: 🟩 acierto, 🟨 parcial, 🟥 fallo
   function textoCompartir() {
     const emojis = guesses
       .map((g) =>
@@ -11,7 +10,15 @@ export default function StatsPanel({ stats, guesses, gano }) {
       .join("");
 
     const resultado = gano ? `${guesses.length}/6` : "X/6";
-    return `Guess The Geo ${resultado}\n${emojis}`;
+    let texto = `Guess The Geo ${resultado}\n${emojis}`;
+
+    // Si hay sesión, añadir el enlace público
+    if (sesion) {
+      const url = `${window.location.origin}/share/${sesion.user.username}/${fecha}`;
+      texto += `\n${url}`;
+    }
+
+    return texto;
   }
 
   function copiar() {

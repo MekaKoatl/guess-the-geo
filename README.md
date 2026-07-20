@@ -6,7 +6,7 @@ Juego diario de adivinar minerales y rocas a partir de una imagen, inspirado en 
 
 ---
 
-## 🇪🇸 Español
+## mxn Español
 
 ### ¿Cómo se juega?
 - Cada día se muestra la imagen de un mineral o roca, muy ampliada.

@@ -30,6 +30,7 @@ import {
   importarStatsBackend,
 } from "./api/backend";
 import AuthPanel from "./components/AuthPanel";
+import SharePage from "./components/SharePage";
 
 // === CONFIG ===
 const MAX_INTENTOS = 6;
@@ -190,6 +191,12 @@ export default function App() {
   const [sesion, setSesion] = useState(cargarSesion()); // { token, user } o null
   const [mostrarAuth, setMostrarAuth] = useState(false);
 
+  // Detectar si la URL es /share/:username/:fecha
+  const partesURL = window.location.pathname.split("/").filter(Boolean);
+  const esVistaCompartir = partesURL[0] === "share" && partesURL.length >= 3;
+  const shareUsername = esVistaCompartir ? partesURL[1] : null;
+  const shareFecha = esVistaCompartir ? partesURL[2] : null;
+
   // === CARGA INICIAL (datos + objeto del día + partida guardada) ===
   useEffect(() => {
     getMinerales()
@@ -334,7 +341,7 @@ export default function App() {
       console.log("Error migrando datos locales:", e.message);
     }
   }
-  
+
   async function alIniciarSesion(token, user) {
     guardarSesion(token, user);
     await migrarDatosLocales(token); // subir lo local si el backend está vacío
@@ -345,6 +352,20 @@ export default function App() {
   function cerrarSesion() {
     borrarSesion();
     setSesion(null);
+  }
+
+  // Vista pública de resultado compartido (URL /share/:username/:fecha)
+  if (esVistaCompartir) {
+    return (
+      <SharePage
+        username={shareUsername}
+        fecha={shareFecha}
+        onVolver={() => {
+          window.history.pushState({}, "", "/");
+          window.location.reload(); // recarga para volver al juego
+        }}
+      />
+    );
   }
 
   // === VISTA DE LISTADO (días anteriores) ===
@@ -417,6 +438,8 @@ export default function App() {
                 stats={stats}
                 guesses={guesses}
                 gano={estado === "ganado"}
+                sesion={sesion}
+                fecha={fecha}
               />
             </>
           )}

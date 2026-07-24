@@ -7,7 +7,7 @@ export default function RockViewer({
   revelado = false,          // si el juego terminó, mostrar imagen completa
 }) {
   const paso = fallos / maxIntentos;
-  const zoom = revelado ? 1 : Math.max(1, 10 - paso * 9);
+  const zoom = revelado ? 1 : Math.max(1, 5 - paso * 5);
 
   const etiqueta = tipo === "roca" ? "Roca" : "Mineral";
 

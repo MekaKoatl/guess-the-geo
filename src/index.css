@@ -5,10 +5,13 @@
   --color-fondo-alto: #4a2f1e;
   --color-fondo-medio: #2d2418;
   --color-fondo-bajo: #0f1a2a;
+  --color-fondo-azul-oscuro: #1E2A3A;
+  --color-fondo-azul-claro: #C2E7FE;
 
   /* === Superficies (semi-transparentes, con borde punteado) === */
   --color-borde-punteado: #7fb8d4;
   --color-superficie: rgba(255, 255, 255, 0.05);
+   --color-superficie2: rgba(0, 0, 0, 0.5);
 
  /* === Colores de estado (pasteles del mockup) === */
   --color-verde-suave: #c5e8c5;

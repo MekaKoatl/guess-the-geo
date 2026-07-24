@@ -12,7 +12,6 @@ export default function StatsPanel({ stats, guesses, gano, sesion, fecha }) {
     const resultado = gano ? `${guesses.length}/6` : "X/6";
     let texto = `Guess The Geo ${resultado}\n${emojis}`;
 
-    // Si hay sesión, añadir el enlace público
     if (sesion) {
       const url = `${window.location.origin}/share/${sesion.user.username}/${fecha}`;
       texto += `\n${url}`;
@@ -26,25 +25,44 @@ export default function StatsPanel({ stats, guesses, gano, sesion, fecha }) {
   }
 
   return (
-    <div className="mt-4 rounded border border-neutral-300 p-4">
-      <h2 className="font-medium mb-3">Estadísticas</h2>
+    <div className="mt-4 rounded-md p-4 bg-[var(--color-superficie)] border-2">
+      <h2 className="text-lg font-semibold mb-3 text-[var(--color-texto)] border-b border-white/40 pb-1">
+        Estadísticas
+      </h2>
 
+      {/* Cifras principales */}
       <div className="grid grid-cols-4 gap-2 text-center mb-4">
         <div>
-          <p className="text-xl font-medium">{stats.jugadas}</p>
-          <p className="text-xs text-neutral-600">Jugadas</p>
+          <p className="text-2xl font-semibold text-[var(--color-texto)]">
+            {stats.jugadas}
+          </p>
+          <p className="text-xs text-[var(--color-texto-suave)] uppercase tracking-wide">
+            Jugadas
+          </p>
         </div>
         <div>
-          <p className="text-xl font-medium">{porcentaje}%</p>
-          <p className="text-xs text-neutral-600">Aciertos</p>
+          <p className="text-2xl font-semibold text-[var(--color-texto)]">
+            {porcentaje}%
+          </p>
+          <p className="text-xs text-[var(--color-texto-suave)] uppercase tracking-wide">
+            Aciertos
+          </p>
         </div>
         <div>
-          <p className="text-xl font-medium">{stats.racha}</p>
-          <p className="text-xs text-neutral-600">Racha</p>
+          <p className="text-2xl font-semibold text-[var(--color-texto)]">
+            {stats.racha}
+          </p>
+          <p className="text-xs text-[var(--color-texto-suave)] uppercase tracking-wide">
+            Racha
+          </p>
         </div>
         <div>
-          <p className="text-xl font-medium">{stats.mejorRacha}</p>
-          <p className="text-xs text-neutral-600">Mejor</p>
+          <p className="text-2xl font-semibold text-[var(--color-texto)]">
+            {stats.mejorRacha}
+          </p>
+          <p className="text-xs text-[var(--color-texto-suave)] uppercase tracking-wide">
+            Mejor
+          </p>
         </div>
       </div>
 
@@ -54,11 +72,14 @@ export default function StatsPanel({ stats, guesses, gano, sesion, fecha }) {
           const max = Math.max(...stats.distribucion, 1);
           const ancho = (n / max) * 100;
           return (
-            <div key={i} className="flex items-center gap-2 text-xs">
+            <div
+              key={i}
+              className="flex items-center gap-2 text-xs text-[var(--color-texto)]"
+            >
               <span className="w-3">{i + 1}</span>
-              <div className="flex-1 bg-neutral-100 rounded">
+              <div className="flex-1 bg-white/10 rounded overflow-hidden">
                 <div
-                  className="bg-green-500 text-white text-right px-1 rounded"
+                  className="bg-[var(--color-verde-borde)] text-white text-right px-2 rounded font-medium"
                   style={{ width: `${Math.max(ancho, 8)}%` }}
                 >
                   {n}
@@ -71,7 +92,7 @@ export default function StatsPanel({ stats, guesses, gano, sesion, fecha }) {
 
       <button
         onClick={copiar}
-        className="w-full bg-green-600 hover:bg-green-700 text-white rounded py-2 font-medium"
+        className="w-full bg-[var(--color-verde-borde)] hover:brightness-110 text-white rounded py-2 font-semibold transition"
       >
         Compartir resultado
       </button>

@@ -1,25 +1,41 @@
+import hexSinUsar from "../assets/hexagonos/hex-sin-usar.png";
+import hexCorrecto from "../assets/hexagonos/hex-correcto.png";
+import hexParcial from "../assets/hexagonos/hex-parcial.png";
+import hexFallo from "../assets/hexagonos/hex-fallo.png";
+
+const IMAGENES = {
+  correct: hexCorrecto,
+  partial: hexParcial,
+  wrong: hexFallo,
+  vacio: hexSinUsar,
+};
+
 export default function StepTracker({ guesses = [], maxIntentos = 6 }) {
-  const hexagono =
-    '[clip-path:polygon(25%_0,75%_0,100%_50%,75%_100%,25%_100%,0_50%)]'
-
   return (
-    <div className="flex justify-center gap-3 my-5">
+    <div className="flex justify-center gap-3 mt-4">
       {Array.from({ length: maxIntentos }).map((_, i) => {
-        const intento = guesses[i]        // puede existir o no
-        const actual = i === guesses.length
-
-        let color = 'bg-neutral-200 text-neutral-400' // futuro
-        if (intento?.estado === 'correct') color = 'bg-green-200 text-green-700'
-        else if (intento?.estado === 'partial') color = 'bg-yellow-200 text-yellow-700'
-        else if (intento?.estado === 'wrong') color = 'bg-red-200 text-red-700'
-        else if (actual) color = 'bg-neutral-300 text-black'
+        const intento = guesses[i];
+        const esActual = !intento && i === guesses.length; // siguiente a jugar
+        const imagen = intento ? IMAGENES[intento.estado] : IMAGENES.vacio;
 
         return (
-          <span key={i} className={`w-12 h-12 grid place-items-center text-lg ${color} ${hexagono}`}>
-            {i + 1}
-          </span>
-        )
+          <div
+            key={i}
+            className={`relative transition-transform ${esActual ? "w-15 h-15" : "w-14 h-14"}`}
+          >
+            {/* Hexágono */}
+            <img
+              src={imagen}
+              alt={`Intento ${i + 1}`}
+              className="w-full h-full"
+            />
+            {/* Número encima */}
+            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-[var(--color-texto-oscuro)]">
+              {i + 1}
+            </span>
+          </div>
+        );
       })}
     </div>
-  )
+  );
 }

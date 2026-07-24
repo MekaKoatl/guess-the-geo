@@ -1,1 +1,61 @@
 @import "tailwindcss";
+
+@theme {
+  /* === Fondo (degradado marrón cálido → azul oscuro) === */
+  --color-fondo-alto: #4a2f1e;
+  --color-fondo-medio: #2d2418;
+  --color-fondo-bajo: #0f1a2a;
+
+  /* === Superficies (semi-transparentes, con borde punteado) === */
+  --color-borde-punteado: #7fb8d4;
+  --color-superficie: rgba(255, 255, 255, 0.05);
+
+ /* === Colores de estado (pasteles del mockup) === */
+  --color-verde-suave: #c5e8c5;
+  --color-verde-borde: #2d7d2d;     
+  --color-amarillo-suave: #fff4c2;
+  --color-amarillo-borde: #a88820;  
+  --color-rojo-suave: #f8c8c8;
+  --color-rojo-borde: #a83030;      
+
+  /* === Texto === */
+  --color-texto: #f0ebe0;
+  --color-texto-suave: #b8b0a0;
+  --color-texto-oscuro: #2a2418;
+
+  /* === Tipografías === */
+  --font-titulo: "Alfa Slab One", ui-serif, Georgia, serif;
+  --font-cuerpo: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* === Fondo global con degradado === */
+html,
+body,
+#root {
+  min-height: 100vh;
+  margin: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--color-fondo-alto) 0%,
+    var(--color-fondo-medio) 45%,
+    var(--color-fondo-bajo) 100%
+  );
+  background-attachment: fixed;
+  color: var(--color-texto);
+  font-family: var(--font-cuerpo);
+}
+
+/* === Título principal (Guess The Geo) === */
+h1 {
+  font-family: var(--font-titulo);
+  color: var(--color-texto);
+  letter-spacing: 0.05em;
+}
+
+/* Los subtítulos usan sans-serif con peso */
+h2,
+h3 {
+  font-family: var(--font-cuerpo);
+  color: var(--color-texto);
+  font-weight: 600;
+}

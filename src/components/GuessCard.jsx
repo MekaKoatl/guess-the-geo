@@ -1,18 +1,25 @@
 export default function GuessCard({ nombre, estado, similares = [], imagen }) {
-  // El color del fondo indica el resultado (sin necesidad de ✕/✓)
+  // Fondo, borde y color de texto según estado
   const estilo =
     estado === "correct"
-      ? "bg-green-200 border-green-500"
+      ? {
+          fondo: "bg-[var(--color-verde-suave)]",
+          borde: "border-[var(--color-verde-borde)]",
+        }
       : estado === "partial"
-        ? "bg-yellow-100 border-yellow-500"
-        : estado === "wrong"
-          ? "bg-red-200 border-red-500"
-          : "bg-neutral-200 border-neutral-300";
+        ? {
+            fondo: "bg-[var(--color-amarillo-suave)]",
+            borde: "border-[var(--color-amarillo-borde)]",
+          }
+        : {
+            fondo: "bg-[var(--color-rojo-suave)]",
+            borde: "border-[var(--color-rojo-borde)]",
+          };
 
   return (
-    <div className="flex overflow-hidden rounded h-22">
-      {/* Mitad izquierda: imagen */}
-      <div className="w-1/3 bg-neutral-400 shrink-0">
+    <div className="flex overflow-hidden rounded-md h-24 shadow-sm">
+      {/* Imagen a la izquierda */}
+      <div className="w-1/3 bg-neutral-800 shrink-0">
         {imagen && (
           <img
             src={imagen}
@@ -22,14 +29,14 @@ export default function GuessCard({ nombre, estado, similares = [], imagen }) {
         )}
       </div>
 
-      {/* Derecha: nombre + coincidencias debajo */}
+      {/* Derecha: nombre + coincidenias, todo centrado vertical */}
       <div
-        className={`flex-1 border-2 px-3 py-2 flex flex-col justify-center ${estilo}`}
+        className={`flex-1 border- px-3 py-2 flex flex-col justify-center text-[var(--color-texto-oscuro)] ${estilo.fondo} ${estilo.borde}`}
       >
         <p className="text-lg leading-tight truncate">{nombre}</p>
 
         {estado === "partial" && similares.length > 0 && (
-          <p className="text-[11px] text-yellow-700 mt-1">
+          <p className="text-xs opacity-75 mt-0.5">
             {similares.join(" ◆ ")}
           </p>
         )}

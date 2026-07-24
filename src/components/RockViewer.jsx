@@ -30,7 +30,7 @@ export default function RockViewer({
       )}
 
       {/* Etiqueta de tipo, siempre visible */}
-      <span className="absolute top-2 left-2 bg-black/70 text-white text-xs font-medium px-2 py-1 rounded">
+  <span className="absolute top-3 left-3 bg-[#0f1a2a]/85 text-[var(--color-texto)] text-xs font-semibold px-3 py-1.5 rounded-md border border-[var(--color-borde-punteado)]/40 backdrop-blur-sm">
         Tipo: {etiqueta}
       </span>
     </div>

@@ -8,6 +8,9 @@ import GuessHistory from "./components/GuessHistory";
 import Countdown from "./components/Countdown";
 import ResultCard from "./components/ResultCard";
 import StatsPanel from "./components/StatsPanel";
+import AuthPanel from "./components/AuthPanel";
+import DayList from "./components/DayList";
+import SharePage from "./components/SharePage";
 import { getMinerales } from "./api/minerals";
 import {
   guardarPartida,
@@ -20,7 +23,6 @@ import {
   cargarSesion,
   borrarSesion,
 } from "./api/storage";
-import DayList from "./components/DayList";
 import {
   iniciarSesion,
   cargarStatsBackend,
@@ -29,16 +31,13 @@ import {
   registrarResultadoBackend,
   importarStatsBackend,
 } from "./api/backend";
-import AuthPanel from "./components/AuthPanel";
-import SharePage from "./components/SharePage";
 
 // === CONFIG ===
 const MAX_INTENTOS = 6;
 const N_POPULARES = 20;
 const N_RESTO = 11;
 const CORTE_POPULARES = 40;
-
-const FECHA_LANZAMIENTO = "2026-07-01"; // primer día jugable del juego
+const FECHA_LANZAMIENTO = "2026-07-01";
 
 const norm = (s) =>
   s
@@ -85,7 +84,7 @@ function barajarFijo(arr, semilla = 12345) {
   return copia;
 }
 
-// === PISTAS POR NIVEL (1=difícil, 2=media, 3=clara) ===
+// === PISTAS POR NIVEL ===
 function nivelDePista(pista) {
   const etiqueta = pista.split(":")[0].trim();
   const obtusas = ["Grupo espacial", "Grupo puntual", "Sistema", "Densidad"];
@@ -109,7 +108,7 @@ function ordenarPistas(objeto, semilla) {
     return null;
   };
 
-  const plan = [1, 1, 2, 2, 3]; // reparto de las 5 revelaciones
+  const plan = [1, 1, 2, 2, 3];
   const orden = [];
   for (const nivel of plan) {
     const p = tomar(nivel);
@@ -121,11 +120,11 @@ function ordenarPistas(objeto, semilla) {
 
 function puntoZoom(semilla) {
   const r = prng(semilla + 99);
-  const enRango = () => Math.round(30 + r() * 40); // 30..70
+  const enRango = () => Math.round(30 + r() * 40);
   return { x: enRango(), y: enRango() };
 }
 
-// === OBJETO DEL DÍA (baraja mensual: 20 populares + 11 del resto) ===
+// === OBJETO DEL DÍA ===
 function poolDelMes(elementos, semilla) {
   const rocas = elementos.filter((m) => m.tipo === "roca");
   const minerales = elementos.filter((m) => m.tipo === "mineral");
@@ -156,7 +155,7 @@ function semillaDelDia(fecha) {
   );
 }
 
-// Lista de días desde el lanzamiento hasta hoy, con el estado de cada uno
+// === LISTA DE DÍAS ===
 function listaDeDias(partidas) {
   const dias = [];
   const hoy = new Date(fechaHoy() + "T00:00:00Z");
@@ -164,18 +163,18 @@ function listaDeDias(partidas) {
 
   for (let d = new Date(hoy); d >= inicio; d.setUTCDate(d.getUTCDate() - 1)) {
     const fecha = d.toISOString().slice(0, 10);
-    const partida = partidas[fecha]; // puede no existir
+    const partida = partidas[fecha];
 
     let estado = "sin-jugar";
-    if (partida) estado = partida.estado; // jugando | ganado | perdido
+    if (partida) estado = partida.estado;
 
     dias.push({
       fecha,
-      estado, // sin-jugar | jugando | ganado | perdido
+      estado,
       guesses: partida ? partida.guesses : [],
     });
   }
-  return dias; // de hoy hacia atrás
+  return dias;
 }
 
 export default function App() {
@@ -184,11 +183,11 @@ export default function App() {
   const [error, setError] = useState(null);
   const [mineral, setMineral] = useState(null);
   const [guesses, setGuesses] = useState([]);
-  const [estado, setEstado] = useState("jugando"); // jugando | ganado | perdido
+  const [estado, setEstado] = useState("jugando");
   const [stats, setStats] = useState(cargarStats());
-  const [fecha, setFecha] = useState(fechaHoy()); // día que se está jugando
-  const [vista, setVista] = useState("juego"); // juego | listado
-  const [sesion, setSesion] = useState(cargarSesion()); // { token, user } o null
+  const [fecha, setFecha] = useState(fechaHoy());
+  const [vista, setVista] = useState("juego");
+  const [sesion, setSesion] = useState(cargarSesion());
   const [mostrarAuth, setMostrarAuth] = useState(false);
 
   // Detectar si la URL es /share/:username/:fecha
@@ -197,7 +196,7 @@ export default function App() {
   const shareUsername = esVistaCompartir ? partesURL[1] : null;
   const shareFecha = esVistaCompartir ? partesURL[2] : null;
 
-  // === CARGA INICIAL (datos + objeto del día + partida guardada) ===
+  // === CARGA INICIAL ===
   useEffect(() => {
     getMinerales()
       .then((d) => {
@@ -210,24 +209,21 @@ export default function App() {
           origen: puntoZoom(semilla),
         });
 
-        // Restaurar la partida de ESE día (si existe)
         const guardada = cargarPartida(fecha);
         setGuesses(guardada ? guardada.guesses : []);
         setEstado(guardada ? guardada.estado : "jugando");
       })
       .catch(() => setError("No se pudieron cargar los minerales."));
-  }, [fecha]); // se vuelve a ejecutar si cambia la fecha
+  }, [fecha]);
 
   // Al iniciar sesión: traer partidas y stats del backend
   useEffect(() => {
-    if (!sesion) return; // invitado: no hay nada que traer
+    if (!sesion) return;
 
-    // Stats del usuario
     cargarStatsBackend(sesion.token)
       .then((s) => setStats(s))
       .catch((e) => console.log("Error stats backend:", e.message));
 
-    // Partida del día actual (de las partidas del usuario)
     cargarPartidasBackend(sesion.token)
       .then((partidas) => {
         const deHoy = partidas.find((p) => p.fecha === fecha);
@@ -238,6 +234,49 @@ export default function App() {
       })
       .catch((e) => console.log("Error partidas backend:", e.message));
   }, [sesion, fecha]);
+
+  // Migrar datos locales al iniciar sesión si el backend está vacío
+  async function migrarDatosLocales(token) {
+    try {
+      const [partidasBackend, statsBackend] = await Promise.all([
+        cargarPartidasBackend(token),
+        cargarStatsBackend(token),
+      ]);
+
+      const backendVacio =
+        partidasBackend.length === 0 && statsBackend.jugadas === 0;
+      if (!backendVacio) return;
+
+      const locales = cargarPartidas();
+      for (const [f, p] of Object.entries(locales)) {
+        await guardarPartidaBackend(token, f, p.guesses, p.estado);
+      }
+
+      const statsLocales = cargarStats();
+      if (statsLocales.jugadas > 0) {
+        await importarStatsBackend(token, statsLocales);
+      }
+    } catch (e) {
+      console.log("Error migrando datos locales:", e.message);
+    }
+  }
+
+  async function alIniciarSesion(token, user) {
+    guardarSesion(token, user);
+    await migrarDatosLocales(token);
+    setSesion({ token, user });
+    setMostrarAuth(false);
+  }
+
+  function cerrarSesion() {
+    borrarSesion();
+    setSesion(null);
+  }
+
+  function irADia(nuevaFecha) {
+    setFecha(nuevaFecha);
+    setVista("juego");
+  }
 
   if (error) {
     return <p className="p-6 text-center text-red-700">{error}</p>;
@@ -285,12 +324,10 @@ export default function App() {
     setEstado(nuevoEstado);
 
     if (sesion) {
-      // Con sesión: guardar en el backend
       guardarPartidaBackend(sesion.token, fecha, lista, nuevoEstado).catch(
         (e) => console.log("Error guardando partida:", e.message),
       );
 
-      // Solo la partida de HOY cuenta para stats
       if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
         registrarResultadoBackend(
           sesion.token,
@@ -301,7 +338,6 @@ export default function App() {
           .catch((e) => console.log("Error registrando stats:", e.message));
       }
     } else {
-      // Invitado: guardar en localStorage (como antes)
       guardarPartida(fecha, lista, nuevoEstado);
       if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
         setStats(registrarResultado(nuevoEstado === "ganado", lista.length));
@@ -309,52 +345,7 @@ export default function App() {
     }
   }
 
-  function irADia(nuevaFecha) {
-    setFecha(nuevaFecha); // dispara la recarga del useEffect
-    setVista("juego");
-  }
-
-  // Sube los datos locales al backend SOLO si la cuenta está vacía
-  async function migrarDatosLocales(token) {
-    try {
-      const [partidasBackend, statsBackend] = await Promise.all([
-        cargarPartidasBackend(token),
-        cargarStatsBackend(token),
-      ]);
-
-      const backendVacio =
-        partidasBackend.length === 0 && statsBackend.jugadas === 0;
-      if (!backendVacio) return; // el backend ya tiene datos: no migrar
-
-      // Subir cada partida local
-      const locales = cargarPartidas(); // { "2026-07-14": { guesses, estado }, ... }
-      for (const [f, p] of Object.entries(locales)) {
-        await guardarPartidaBackend(token, f, p.guesses, p.estado);
-      }
-
-      // Subir stats locales
-      const statsLocales = cargarStats();
-      if (statsLocales.jugadas > 0) {
-        await importarStatsBackend(token, statsLocales);
-      }
-    } catch (e) {
-      console.log("Error migrando datos locales:", e.message);
-    }
-  }
-
-  async function alIniciarSesion(token, user) {
-    guardarSesion(token, user);
-    await migrarDatosLocales(token); // subir lo local si el backend está vacío
-    setSesion({ token, user }); // dispara la carga desde el backend
-    setMostrarAuth(false);
-  }
-
-  function cerrarSesion() {
-    borrarSesion();
-    setSesion(null);
-  }
-
-  // Vista pública de resultado compartido (URL /share/:username/:fecha)
+  // === VISTA DE COMPARTIR (URL /share/:username/:fecha) ===
   if (esVistaCompartir) {
     return (
       <SharePage
@@ -362,7 +353,7 @@ export default function App() {
         fecha={shareFecha}
         onVolver={() => {
           window.history.pushState({}, "", "/");
-          window.location.reload(); // recarga para volver al juego
+          window.location.reload();
         }}
       />
     );
@@ -371,7 +362,7 @@ export default function App() {
   // === VISTA DE LISTADO (días anteriores) ===
   if (vista === "listado") {
     return (
-      <div className="min-h-screen bg-white text-neutral-900 p-6">
+      <div className="min-h-screen p-6">
         <DayList
           dias={listaDeDias(cargarPartidas())}
           hoy={fechaHoy()}
@@ -385,38 +376,46 @@ export default function App() {
     );
   }
 
-  // === RENDER (3 columnas: pistas | juego | buscador + intentos) ===
+  // === RENDER (vista de juego) ===
   return (
-    <div className="min-h-screen bg-white text-neutral-900 p-6">
-      {/* Barra superior de sesión */}
-      <div className="max-w-5xl mx-auto flex justify-end mb-4">
-        {sesion ? (
-          <div className="flex items-center gap-3 text-sm">
-            <span>Hola, {sesion.user.username}</span>
-            <button onClick={cerrarSesion} className="underline">
-              Cerrar sesión
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setMostrarAuth(true)}
-            className="text-sm bg-blue-600 text-white rounded px-3 py-1"
-          >
-            Iniciar sesión
-          </button>
-        )}
-      </div>
+    <div className="min-h-screen p-6">
+      {/* Tres columnas: pistas | juego | buscador+intentos */}
       <div className="flex justify-center gap-6">
         <HintPanel pistas={mineral.pistas} reveladas={fallos} />
 
         <main className="w-full max-w-md">
-          <Header />
-          <button
-            onClick={() => setVista("listado")}
-            className="text-sm underline mb-2"
-          >
-            Ver días anteriores
-          </button>
+          {/* Título + navegación centrados sobre la imagen */}
+          <header className="text-center mb-4">
+            <h1 className="text-5xl mb-3">Guess The Geo</h1>
+            <nav className="flex justify-center gap-4 text-sm">
+              {sesion ? (
+                <>
+                  <span>Hola, {sesion.user.username}</span>
+                  <button
+                    onClick={cerrarSesion}
+                    className="underline hover:text-[var(--color-borde-punteado)]"
+                  >
+                    Cerrar sesión
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setMostrarAuth(true)}
+                  className="underline hover:text-[var(--color-borde-punteado)]"
+                >
+                  Iniciar sesión
+                </button>
+              )}
+              <span className="text-[var(--color-texto-suave)]">|</span>
+              <button
+                onClick={() => setVista("listado")}
+                className="underline hover:text-[var(--color-borde-punteado)]"
+              >
+                Días anteriores
+              </button>
+            </nav>
+          </header>
+
           <RockViewer
             imagen={mineral.imagen}
             tipo={mineral.tipo}
@@ -443,8 +442,10 @@ export default function App() {
               />
             </>
           )}
+
           <Countdown />
         </main>
+
         <div className="w-80 shrink-0 self-start space-y-4">
           {estado === "jugando" && (
             <GuessForm
@@ -456,6 +457,7 @@ export default function App() {
           <GuessHistory guesses={guesses} />
         </div>
       </div>
+
       {mostrarAuth && (
         <AuthPanel
           onSesion={alIniciarSesion}

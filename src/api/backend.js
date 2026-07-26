@@ -47,6 +47,14 @@ export function cargarPartidasBackend(token) {
   return pedir("/api/games", { token });
 }
 
+export function eliminarCuenta(token, password) {
+  return pedir("/api/auth/me", {
+    metodo: "DELETE",
+    token,
+    body: { password },
+  });
+}
+
 // --- STATS ---
 export function cargarStatsBackend(token) {
   return pedir("/api/stats", { token });
@@ -67,3 +75,4 @@ export function importarStatsBackend(token, stats) {
     body: { stats },
   });
 }
+

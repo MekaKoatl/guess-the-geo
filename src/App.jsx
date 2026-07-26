@@ -31,6 +31,7 @@ import {
   registrarResultadoBackend,
   importarStatsBackend,
 } from "./api/backend";
+import MenuCuenta from "./components/MenuCuenta";
 
 // === CONFIG ===
 const MAX_INTENTOS = 6;
@@ -389,15 +390,14 @@ export default function App() {
             <h1 className="text-5xl mb-3">Guess The Geo</h1>
             <nav className="flex justify-center gap-4 text-sm">
               {sesion ? (
-                <>
-                  <span>Hola, {sesion.user.username}</span>
-                  <button
-                    onClick={cerrarSesion}
-                    className="underline hover:text-[var(--color-borde-punteado)]"
-                  >
-                    Cerrar sesión
-                  </button>
-                </>
+                <MenuCuenta
+                  sesion={sesion}
+                  onCerrarSesion={cerrarSesion}
+                  onCuentaEliminada={() => {
+                    borrarSesion();
+                    setSesion(null);
+                  }}
+                />
               ) : (
                 <button
                   onClick={() => setMostrarAuth(true)}

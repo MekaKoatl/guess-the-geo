@@ -1,6 +1,10 @@
+import { useState } from "react";
+
 export default function StatsPanel({ stats, guesses, gano, sesion, fecha }) {
   const porcentaje =
     stats.jugadas > 0 ? Math.round((stats.ganadas / stats.jugadas) * 100) : 0;
+
+  const [copiado, setCopiado] = useState(false);
 
   function textoCompartir() {
     const emojis = guesses
@@ -9,19 +13,53 @@ export default function StatsPanel({ stats, guesses, gano, sesion, fecha }) {
       )
       .join("");
 
-    const resultado = gano ? `${guesses.length}/6` : "X/6";
-    let texto = `Guess The Geo ${resultado}\n${emojis}`;
+    // Línea 1: título con la fecha
+    const lineas = [`Mineral o Roca del día ${fecha}`];
 
-    if (sesion) {
-      const url = `${window.location.origin}/share/${sesion.user.username}/${fecha}`;
-      texto += `\n${url}`;
+    // Línea 2: resultado
+    if (gano) {
+      const n = guesses.length;
+      lineas.push(`¡Lo adiviné en ${n} ${n === 1 ? "intento" : "intentos"}!`);
+    } else {
+      lineas.push("No lo conseguí esta vez 😔");
     }
 
-    return texto;
+    // Línea 3: racha y promedio (solo con sesión y si hay stats)
+    if (sesion && stats.jugadas > 0) {
+      const totalVictorias = stats.distribucion.reduce((a, b) => a + b, 0);
+      let promedio = "—";
+      if (totalVictorias > 0) {
+        const suma = stats.distribucion.reduce(
+          (acc, veces, i) => acc + (i + 1) * veces,
+          0,
+        );
+        promedio = (suma / totalVictorias).toFixed(1);
+      }
+      lineas.push(`🔥 ${stats.racha} | Prom. de intentos: ${promedio}`);
+    }
+
+    // Línea 4: emojis
+    lineas.push(emojis);
+
+    // Línea 5: enlace (al resultado si hay sesión, al juego si no)
+    if (sesion) {
+      lineas.push(
+        `${window.location.origin}/share/${sesion.user.username}/${fecha}`,
+      );
+    } else {
+      lineas.push(window.location.origin);
+    }
+
+    // Línea 6: hashtag
+    lineas.push("#guessthegeo");
+
+    return lineas.join("\n");
   }
 
   function copiar() {
     navigator.clipboard.writeText(textoCompartir());
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000); //
   }
 
   return (
@@ -94,7 +132,7 @@ export default function StatsPanel({ stats, guesses, gano, sesion, fecha }) {
         onClick={copiar}
         className="w-full bg-[var(--color-verde-borde)] hover:brightness-110 text-white rounded py-2 font-semibold transition"
       >
-        Compartir resultado
+        {copiado ? "¡Copiado! ✓" : "Compartir resultado"}
       </button>
     </div>
   );

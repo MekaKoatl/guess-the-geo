@@ -2,11 +2,18 @@
 
 Juego diario de adivinar minerales y rocas a partir de una imagen, inspirado en [guessthe.game](https://guessthe.game/). Cada día hay un objeto distinto (igual para todos), con 6 intentos y pistas que se revelan al fallar.
 
-**🎮 Jugar:** [enlace-a-tu-proyecto.vercel.app](https://)
+**🎮 Jugar:** [guess-the-geo.vercel.app](https://guess-the-geo.vercel.app)
+
+### 👤 Cuenta de prueba
+Puedes jugar sin registrarte (modo invitado). Si quieres probar las cuentas con sincronización:
+- **Usuario / Email:** `demo@guessthegeo.com`
+- **Contraseña:** `demo1234`
+
+*(Cuenta de demostración; sus datos pueden cambiar.)*
 
 ---
 
-## mxn Español
+## 🇲🇽 Español
 
 ### ¿Cómo se juega?
 - Cada día se muestra la imagen de un mineral o roca, muy ampliada.
@@ -19,7 +26,8 @@ Juego diario de adivinar minerales y rocas a partir de una imagen, inspirado en 
 - Pistas por niveles de dificultad.
 - Buscador con autocompletado.
 - Se puede jugar días anteriores.
-- Estadísticas y racha guardadas en el navegador.
+- Cuentas de usuario opcionales con progreso sincronizado.
+- Estadísticas y racha (en el navegador o en la nube si inicias sesión).
 - Compartir resultado.
 
 ### Datos
@@ -29,7 +37,12 @@ Los datos provienen de **Wikidata** y las imágenes de **Wikimedia Commons**, ge
 node scripts/generar-minerales.mjs
 ```
 
-Esto reescribe `src/data/minerals.js`. Los datos son de licencia libre (Wikidata es CC0).
+Los datos son de licencia libre (Wikidata es CC0).
+
+### Arquitectura
+- **Frontend:** React + Vite, desplegado en Vercel.
+- **Backend:** Node + Express, desplegado en Render.
+- **Base de datos:** MongoDB (Atlas en producción, Docker en desarrollo).
 
 ### Desarrollo
 ```bash
@@ -39,7 +52,7 @@ npm run build   # compilar para producción
 ```
 
 ### Tecnologías
-React 19 · Vite · Tailwind CSS 4 · Datos de Wikidata/Wikimedia Commons
+React 19 · Vite · Tailwind CSS 4 · Node · Express · MongoDB · Datos de Wikidata/Wikimedia Commons
 
 ---
 
@@ -56,7 +69,8 @@ React 19 · Vite · Tailwind CSS 4 · Datos de Wikidata/Wikimedia Commons
 - Hints grouped by difficulty level.
 - Autocomplete search.
 - Playable previous days.
-- Stats and streak saved in the browser.
+- Optional user accounts with synced progress.
+- Stats and streak (in the browser, or in the cloud when logged in).
 - Share your result.
 
 ### Data
@@ -66,7 +80,12 @@ Data comes from **Wikidata** and images from **Wikimedia Commons**, generated wi
 node scripts/generar-minerales.mjs
 ```
 
-This rewrites `src/data/minerals.js`. The data is freely licensed (Wikidata is CC0).
+The data is freely licensed (Wikidata is CC0).
+
+### Architecture
+- **Frontend:** React + Vite, deployed on Vercel.
+- **Backend:** Node + Express, deployed on Render.
+- **Database:** MongoDB (Atlas in production, Docker in development).
 
 ### Development
 ```bash
@@ -76,7 +95,7 @@ npm run build   # production build
 ```
 
 ### Tech stack
-React 19 · Vite · Tailwind CSS 4 · Wikidata/Wikimedia Commons data
+React 19 · Vite · Tailwind CSS 4 · Node · Express · MongoDB · Wikidata/Wikimedia Commons data
 
 ---
 

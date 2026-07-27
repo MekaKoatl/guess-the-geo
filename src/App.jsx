@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import Header from "./components/Header";
+import { useState } from "react";
 import HintPanel from "./components/HintPanel";
 import RockViewer from "./components/RockViewer";
 import StepTracker from "./components/StepTracker";
@@ -11,268 +10,30 @@ import StatsPanel from "./components/StatsPanel";
 import AuthPanel from "./components/AuthPanel";
 import DayList from "./components/DayList";
 import SharePage from "./components/SharePage";
-import { getMinerales } from "./api/minerals";
-import {
-  guardarPartida,
-  cargarPartida,
-  cargarPartidas,
-  cargarStats,
-  registrarResultado,
-  fechaHoy,
-  guardarSesion,
-  cargarSesion,
-  borrarSesion,
-} from "./api/storage";
-import {
-  iniciarSesion,
-  cargarStatsBackend,
-  cargarPartidasBackend,
-  guardarPartidaBackend,
-  registrarResultadoBackend,
-  importarStatsBackend,
-} from "./api/backend";
-import MenuCuenta from "./components/MenuCuenta";
+import LayoutJuego from "./components/LayoutJuego";
+import BarraSuperior from "./components/BarraSuperior";
 import Cargando from "./components/Cargando";
-
-// === CONFIG ===
-const MAX_INTENTOS = 6;
-const N_POPULARES = 20;
-const N_RESTO = 11;
-const CORTE_POPULARES = 40;
-const FECHA_LANZAMIENTO = "2026-07-01";
-
-const norm = (s) =>
-  s
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-// === COMPARACIÓN PARCIAL (amarillo) ===
-const CAMPOS = [
-  { key: "familia", label: "Misma familia" },
-  { key: "color", label: "Mismo color" },
-  { key: "sistema", label: "Mismo sistema cristalino" },
-  { key: "rocaTipo", label: "Mismo tipo de roca" },
-  { key: "composicion", label: "Composición parecida" },
-];
-
-function coincidencias(elegido, objetivo) {
-  return CAMPOS.filter((c) => {
-    const a = norm(elegido[c.key] || "");
-    const b = norm(objetivo[c.key] || "");
-    return a && a === b;
-  }).map((c) => c.label);
-}
-
-// === ALEATORIO DETERMINISTA ===
-function prng(seed) {
-  return function () {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function barajarFijo(arr, semilla = 12345) {
-  const r = prng(semilla);
-  const copia = [...arr];
-  for (let i = copia.length - 1; i > 0; i--) {
-    const j = Math.floor(r() * (i + 1));
-    [copia[i], copia[j]] = [copia[j], copia[i]];
-  }
-  return copia;
-}
-
-// === PISTAS POR NIVEL ===
-function nivelDePista(pista) {
-  const etiqueta = pista.split(":")[0].trim();
-  const obtusas = ["Grupo espacial", "Grupo puntual", "Sistema", "Densidad"];
-  const claras = ["Raya", "Color", "Fórmula"];
-  if (obtusas.includes(etiqueta)) return 1;
-  if (claras.includes(etiqueta)) return 3;
-  return 2;
-}
-
-function ordenarPistas(objeto, semilla) {
-  const niveles = { 1: [], 2: [], 3: [] };
-  for (const p of objeto.pistas) niveles[nivelDePista(p)].push(p);
-
-  niveles[1] = barajarFijo(niveles[1], semilla + 1);
-  niveles[2] = barajarFijo(niveles[2], semilla + 2);
-  niveles[3] = barajarFijo(niveles[3], semilla + 3);
-
-  const tomar = (nivel) => {
-    if (niveles[nivel].length) return niveles[nivel].shift();
-    for (const n of [1, 2, 3]) if (niveles[n].length) return niveles[n].shift();
-    return null;
-  };
-
-  const plan = [1, 1, 2, 2, 3];
-  const orden = [];
-  for (const nivel of plan) {
-    const p = tomar(nivel);
-    if (p) orden.push(p);
-  }
-  for (const n of [1, 2, 3]) orden.push(...niveles[n]);
-  return orden;
-}
-
-function puntoZoom(semilla) {
-  const r = prng(semilla + 99);
-  const enRango = () => Math.round(30 + r() * 40);
-  return { x: enRango(), y: enRango() };
-}
-
-// === OBJETO DEL DÍA ===
-function poolDelMes(elementos, semilla) {
-  const rocas = elementos.filter((m) => m.tipo === "roca");
-  const minerales = elementos.filter((m) => m.tipo === "mineral");
-
-  const populares = [...minerales.slice(0, CORTE_POPULARES), ...rocas];
-  const resto = minerales.slice(CORTE_POPULARES);
-
-  const elegidosPop = barajarFijo(populares, semilla).slice(0, N_POPULARES);
-  const elegidosResto = barajarFijo(resto, semilla + 1).slice(0, N_RESTO);
-
-  return barajarFijo([...elegidosPop, ...elegidosResto], semilla + 2);
-}
-
-function objetoDelDia(elementos, fecha) {
-  const d = new Date(fecha + "T00:00:00Z");
-  const anio = d.getUTCFullYear();
-  const mes = d.getUTCMonth() + 1;
-  const dia = d.getUTCDate();
-
-  const pool = poolDelMes(elementos, anio * 100 + mes);
-  return pool[(dia - 1) % pool.length];
-}
-
-function semillaDelDia(fecha) {
-  const d = new Date(fecha + "T00:00:00Z");
-  return (
-    d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate()
-  );
-}
-
-// === LISTA DE DÍAS ===
-function listaDeDias(partidas) {
-  const dias = [];
-  const hoy = new Date(fechaHoy() + "T00:00:00Z");
-  const inicio = new Date(FECHA_LANZAMIENTO + "T00:00:00Z");
-
-  for (let d = new Date(hoy); d >= inicio; d.setUTCDate(d.getUTCDate() - 1)) {
-    const fecha = d.toISOString().slice(0, 10);
-    const partida = partidas[fecha];
-
-    let estado = "sin-jugar";
-    if (partida) estado = partida.estado;
-
-    dias.push({
-      fecha,
-      estado,
-      guesses: partida ? partida.guesses : [],
-    });
-  }
-  return dias;
-}
+import { cargarPartidas, fechaHoy } from "./api/storage";
+import { useSesion } from "./hooks/useSesion";
+import { usePartida } from "./hooks/usePartida";
+import { MAX_INTENTOS, listaDeDias } from "./logica/juego";
 
 export default function App() {
   // === ESTADO ===
-  const [datos, setDatos] = useState(null);
-  const [error, setError] = useState(null);
-  const [mineral, setMineral] = useState(null);
-  const [guesses, setGuesses] = useState([]);
-  const [estado, setEstado] = useState("jugando");
-  const [stats, setStats] = useState(cargarStats());
   const [fecha, setFecha] = useState(fechaHoy());
   const [vista, setVista] = useState("juego");
-  const [sesion, setSesion] = useState(cargarSesion());
   const [mostrarAuth, setMostrarAuth] = useState(false);
+  const { sesion, iniciar, cerrar: cerrarSesion } = useSesion();
+  const { datos, error, mineral, guesses, estado, stats, intentar } =
+    usePartida(fecha, sesion);
 
   // Detectar si la URL es /share/:username/:fecha
   const partesURL = window.location.pathname.split("/").filter(Boolean);
   const esVistaCompartir = partesURL[0] === "share" && partesURL.length >= 3;
-  const shareUsername = esVistaCompartir ? partesURL[1] : null;
-  const shareFecha = esVistaCompartir ? partesURL[2] : null;
-
-  // === CARGA INICIAL ===
-  useEffect(() => {
-    getMinerales()
-      .then((d) => {
-        setDatos(d);
-        const obj = objetoDelDia(d.minerales, fecha);
-        const semilla = semillaDelDia(fecha);
-        setMineral({
-          ...obj,
-          pistas: ordenarPistas(obj, semilla),
-          origen: puntoZoom(semilla),
-        });
-
-        const guardada = cargarPartida(fecha);
-        setGuesses(guardada ? guardada.guesses : []);
-        setEstado(guardada ? guardada.estado : "jugando");
-      })
-      .catch(() => setError("No se pudieron cargar los minerales."));
-  }, [fecha]);
-
-  // Al iniciar sesión: traer partidas y stats del backend
-  useEffect(() => {
-    if (!sesion) return;
-
-    cargarStatsBackend(sesion.token)
-      .then((s) => setStats(s))
-      .catch((e) => console.log("Error stats backend:", e.message));
-
-    cargarPartidasBackend(sesion.token)
-      .then((partidas) => {
-        const deHoy = partidas.find((p) => p.fecha === fecha);
-        if (deHoy) {
-          setGuesses(deHoy.guesses);
-          setEstado(deHoy.estado);
-        }
-      })
-      .catch((e) => console.log("Error partidas backend:", e.message));
-  }, [sesion, fecha]);
-
-  // Migrar datos locales al iniciar sesión si el backend está vacío
-  async function migrarDatosLocales(token) {
-    try {
-      const [partidasBackend, statsBackend] = await Promise.all([
-        cargarPartidasBackend(token),
-        cargarStatsBackend(token),
-      ]);
-
-      const backendVacio =
-        partidasBackend.length === 0 && statsBackend.jugadas === 0;
-      if (!backendVacio) return;
-
-      const locales = cargarPartidas();
-      for (const [f, p] of Object.entries(locales)) {
-        await guardarPartidaBackend(token, f, p.guesses, p.estado);
-      }
-
-      const statsLocales = cargarStats();
-      if (statsLocales.jugadas > 0) {
-        await importarStatsBackend(token, statsLocales);
-      }
-    } catch (e) {
-      console.log("Error migrando datos locales:", e.message);
-    }
-  }
 
   async function alIniciarSesion(token, user) {
-    guardarSesion(token, user);
-    await migrarDatosLocales(token);
-    setSesion({ token, user });
+    await iniciar(token, user);
     setMostrarAuth(false);
-  }
-
-  function cerrarSesion() {
-    borrarSesion();
-    setSesion(null);
   }
 
   function irADia(nuevaFecha) {
@@ -280,85 +41,25 @@ export default function App() {
     setVista("juego");
   }
 
-  if (error) {
-    return <p className="p-6 text-center text-red-700">{error}</p>;
-  }
-  if (!datos || !mineral) {
-    return <Cargando mensaje="Cargando minerales…" />;
-  }
-
-  const fallos = guesses.length;
-
-  // === PROCESAR INTENTO ===
-  function manejarIntento(respuesta) {
-    if (estado !== "jugando") return;
-
-    const acierto = norm(respuesta) === norm(mineral.nombre);
-    const elegido = datos.minerales.find(
-      (m) => norm(m.nombre) === norm(respuesta),
-    );
-
-    let estadoIntento = "wrong";
-    let similares = [];
-
-    if (acierto) {
-      estadoIntento = "correct";
-    } else if (elegido) {
-      similares = coincidencias(elegido, mineral);
-      if (similares.length > 0) estadoIntento = "partial";
-    }
-
-    const nuevo = {
-      nombre: respuesta,
-      estado: estadoIntento,
-      similares,
-      imagen: elegido?.imagen || "",
-    };
-    const lista = [...guesses, nuevo];
-    setGuesses(lista);
-
-    let nuevoEstado = estado;
-    if (acierto) {
-      nuevoEstado = "ganado";
-    } else if (lista.length >= MAX_INTENTOS) {
-      nuevoEstado = "perdido";
-    }
-    setEstado(nuevoEstado);
-
-    if (sesion) {
-      guardarPartidaBackend(sesion.token, fecha, lista, nuevoEstado).catch(
-        (e) => console.log("Error guardando partida:", e.message),
-      );
-
-      if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
-        registrarResultadoBackend(
-          sesion.token,
-          nuevoEstado === "ganado",
-          lista.length,
-        )
-          .then((s) => setStats(s))
-          .catch((e) => console.log("Error registrando stats:", e.message));
-      }
-    } else {
-      guardarPartida(fecha, lista, nuevoEstado);
-      if (nuevoEstado !== "jugando" && fecha === fechaHoy()) {
-        setStats(registrarResultado(nuevoEstado === "ganado", lista.length));
-      }
-    }
-  }
-
   // === VISTA DE COMPARTIR (URL /share/:username/:fecha) ===
   if (esVistaCompartir) {
     return (
       <SharePage
-        username={shareUsername}
-        fecha={shareFecha}
+        username={partesURL[1]}
+        fecha={partesURL[2]}
         onVolver={() => {
           window.history.pushState({}, "", "/");
           window.location.reload();
         }}
       />
     );
+  }
+
+  if (error) {
+    return <p className="p-6 text-center text-red-700">{error}</p>;
+  }
+  if (!datos || !mineral) {
+    return <Cargando mensaje="Cargando minerales…" />;
   }
 
   // === VISTA DE LISTADO (días anteriores) ===
@@ -379,85 +80,63 @@ export default function App() {
   }
 
   // === RENDER (vista de juego) ===
+  const fallos = guesses.length;
+
+  const bloqueImagen = (
+    <RockViewer
+      imagen={mineral.imagen}
+      tipo={mineral.tipo}
+      fallos={fallos}
+      maxIntentos={MAX_INTENTOS}
+      origen={mineral.origen}
+      revelado={estado !== "jugando"}
+    />
+  );
+  const bloqueHexagonos = (
+    <StepTracker guesses={guesses} maxIntentos={MAX_INTENTOS} />
+  );
+  const bloqueBuscador = estado === "jugando" && (
+    <GuessForm
+      onGuess={intentar}
+      opciones={datos.nombres}
+      usados={guesses.map((g) => g.nombre)}
+    />
+  );
+  const bloqueIntentos = <GuessHistory guesses={guesses} />;
+  const bloquePistas = <HintPanel pistas={mineral.pistas} reveladas={fallos} />;
+  const bloqueResultado = estado !== "jugando" && (
+    <>
+      <ResultCard objeto={mineral} estado={estado} intentos={guesses.length} />
+      <StatsPanel
+        stats={stats}
+        guesses={guesses}
+        gano={estado === "ganado"}
+        sesion={sesion}
+        fecha={fecha}
+      />
+    </>
+  );
+  const bloqueCountdown = <Countdown />;
+
   return (
-    <div className="min-h-screen p-6">
-      {/* Tres columnas: pistas | juego | buscador+intentos */}
-      <div className="flex justify-center gap-6">
-        <HintPanel pistas={mineral.pistas} reveladas={fallos} />
+    <div className="min-h-screen p-4 sm:p-6">
+      <BarraSuperior
+        sesion={sesion}
+        onCerrarSesion={cerrarSesion}
+        onCuentaEliminada={cerrarSesion}
+        onAbrirAuth={() => setMostrarAuth(true)}
+        onVerListado={() => setVista("listado")}
+      />
 
-        <main className="w-full max-w-md">
-          {/* Título + navegación centrados sobre la imagen */}
-          <header className="text-center mb-4">
-            <h1 className="text-5xl mb-3">Guess The Geo</h1>
-            <nav className="flex justify-center gap-4 text-sm">
-              {sesion ? (
-                <MenuCuenta
-                  sesion={sesion}
-                  onCerrarSesion={cerrarSesion}
-                  onCuentaEliminada={() => {
-                    borrarSesion();
-                    setSesion(null);
-                  }}
-                />
-              ) : (
-                <button
-                  onClick={() => setMostrarAuth(true)}
-                  className="underline hover:text-[var(--color-borde-punteado)]"
-                >
-                  Iniciar sesión
-                </button>
-              )}
-              <span className="text-[var(--color-texto-suave)]">|</span>
-              <button
-                onClick={() => setVista("listado")}
-                className="underline hover:text-[var(--color-borde-punteado)]"
-              >
-                Días anteriores
-              </button>
-            </nav>
-          </header>
-
-          <RockViewer
-            imagen={mineral.imagen}
-            tipo={mineral.tipo}
-            fallos={fallos}
-            maxIntentos={MAX_INTENTOS}
-            origen={mineral.origen}
-            revelado={estado !== "jugando"}
-          />
-          <StepTracker guesses={guesses} maxIntentos={MAX_INTENTOS} />
-
-          {estado !== "jugando" && (
-            <>
-              <ResultCard
-                objeto={mineral}
-                estado={estado}
-                intentos={guesses.length}
-              />
-              <StatsPanel
-                stats={stats}
-                guesses={guesses}
-                gano={estado === "ganado"}
-                sesion={sesion}
-                fecha={fecha}
-              />
-            </>
-          )}
-
-          <Countdown />
-        </main>
-
-        <div className="w-80 shrink-0 self-start space-y-4">
-          {estado === "jugando" && (
-            <GuessForm
-              onGuess={manejarIntento}
-              opciones={datos.nombres}
-              usados={guesses.map((g) => g.nombre)}
-            />
-          )}
-          <GuessHistory guesses={guesses} />
-        </div>
-      </div>
+      <LayoutJuego
+        imagen={bloqueImagen}
+        hexagonos={bloqueHexagonos}
+        buscador={bloqueBuscador}
+        intentos={bloqueIntentos}
+        pistas={bloquePistas}
+        resultado={bloqueResultado}
+        countdown={bloqueCountdown}
+      />
 
       {mostrarAuth && (
         <AuthPanel

@@ -2,7 +2,7 @@ export default function HintPanel({ pistas = [], reveladas = 0 }) {
   const visibles = pistas.slice(0, reveladas);
 
   return (
-    <aside className="w-64 self-start shrink-0">
+    <aside className="w-full">
       <h2 className="text-lg font-semibold mb-2 text-[var(--color-texto)] border-b border-white/40 pb-1">
         Pistas
       </h2>

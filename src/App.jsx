@@ -32,6 +32,7 @@ import {
   importarStatsBackend,
 } from "./api/backend";
 import MenuCuenta from "./components/MenuCuenta";
+import Cargando from "./components/Cargando";
 
 // === CONFIG ===
 const MAX_INTENTOS = 6;
@@ -283,7 +284,7 @@ export default function App() {
     return <p className="p-6 text-center text-red-700">{error}</p>;
   }
   if (!datos || !mineral) {
-    return <p className="p-6 text-center text-neutral-500">Cargando…</p>;
+    return <Cargando mensaje="Cargando minerales…" />;
   }
 
   const fallos = guesses.length;

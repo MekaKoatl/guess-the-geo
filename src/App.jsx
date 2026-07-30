@@ -13,6 +13,7 @@ import SharePage from "./components/SharePage";
 import LayoutJuego from "./components/LayoutJuego";
 import BarraSuperior from "./components/BarraSuperior";
 import Cargando from "./components/Cargando";
+import Cargando2 from "./components/Cargando2";
 import { cargarPartidas, fechaHoy } from "./api/storage";
 import { useSesion } from "./hooks/useSesion";
 import { usePartida } from "./hooks/usePartida";
@@ -59,7 +60,7 @@ export default function App() {
     return <p className="p-6 text-center text-red-700">{error}</p>;
   }
   if (!datos || !mineral) {
-    return <Cargando mensaje="Cargando minerales…" />;
+    return <Cargando2 mensaje="Cargando minerales…" />;
   }
 
   // === VISTA DE LISTADO (días anteriores) ===

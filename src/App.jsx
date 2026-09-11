@@ -25,7 +25,7 @@ export default function App() {
   const [vista, setVista] = useState("juego");
   const [mostrarAuth, setMostrarAuth] = useState(false);
   const { sesion, iniciar, cerrar: cerrarSesion } = useSesion();
-  const { datos, error, mineral, guesses, estado, stats, intentar } =
+  const { datos, error, mineral, guesses, estado, stats, intentar, cargando } =
     usePartida(fecha, sesion);
 
   // Detectar si la URL es /share/:username/:fecha
@@ -59,7 +59,7 @@ export default function App() {
   if (error) {
     return <p className="p-6 text-center text-red-700">{error}</p>;
   }
-  if (!datos || !mineral) {
+  if (cargando || !datos || !mineral) {
     return <Cargando2 mensaje="Cargando minerales…" />;
   }
 

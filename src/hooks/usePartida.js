@@ -30,10 +30,11 @@ export function usePartida(fecha, sesion) {
   const [mineral, setMineral] = useState(null);
   const [guesses, setGuesses] = useState([]);
   const [estado, setEstado] = useState("jugando");
-  const [stats, setStats] = useState(cargarStats());
+  const [cargando, setCargando] = useState(true);
 
   // === CARGA INICIAL ===
   useEffect(() => {
+    setCargando(true);
     getMinerales()
       .then((d) => {
         setDatos(d);
@@ -48,8 +49,12 @@ export function usePartida(fecha, sesion) {
         const guardada = cargarPartida(fecha);
         setGuesses(guardada ? guardada.guesses : []);
         setEstado(guardada ? guardada.estado : "jugando");
+        setCargando(false);
       })
-      .catch(() => setError("No se pudieron cargar los minerales."));
+      .catch(() => {
+        setError("No se pudieron cargar los minerales.");
+        setCargando(false);
+      });
   }, [fecha]);
 
   // === SINCRONIZAR CON BACKEND ===
@@ -134,5 +139,5 @@ export function usePartida(fecha, sesion) {
     }
   }
 
-  return { datos, error, mineral, guesses, estado, stats, intentar };
+  return { datos, error, mineral, guesses, estado, stats, intentar, cargando };
 }

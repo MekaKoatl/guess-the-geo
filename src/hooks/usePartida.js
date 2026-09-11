@@ -30,6 +30,7 @@ export function usePartida(fecha, sesion) {
   const [mineral, setMineral] = useState(null);
   const [guesses, setGuesses] = useState([]);
   const [estado, setEstado] = useState("jugando");
+  const [stats, setStats] = useState(cargarStats());
   const [cargando, setCargando] = useState(true);
 
   // === CARGA INICIAL ===
@@ -127,7 +128,7 @@ export function usePartida(fecha, sesion) {
           sesion.token,
           nuevoEstado === "ganado",
           lista.length,
-        )
+        ) 
           .then((s) => setStats(s))
           .catch((e) => console.log("Error registrando stats:", e.message));
       }

@@ -1,3 +1,16 @@
+import { useState } from "react";
+
+const NOMBRES_MES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+// === HELPER: extrae {anio, mes} de "YYYY-MM-DD" ===
+function anioMesDe(fecha) {
+  const [anio, mes] = fecha.split("-").map(Number);
+  return { anio, mes };
+}
+
 export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
   const etiqueta = {
     "sin-jugar": "Aún sin jugar",
@@ -13,9 +26,44 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
     perdido: "text-[var(--color-rojo-borde)]",
   };
 
-  // Elegir un día al azar
+  // === LÍMITES DE NAVEGACIÓN ===
+  // dias[0] es el más reciente (hoy), el último es el más antiguo (lanzamiento)
+  const limiteReciente = anioMesDe(dias[0]?.fecha || hoy);
+  const limiteAntiguo = anioMesDe(dias[dias.length - 1]?.fecha || hoy);
+
+  // === MES QUE SE ESTÁ VIENDO ===
+  const [{ anio, mes }, setAnioMes] = useState(anioMesDe(hoy));
+
+  const diasDelMes = dias.filter((d) => {
+    const am = anioMesDe(d.fecha);
+    return am.anio === anio && am.mes === mes;
+  });
+
+  function enLimiteSuperior() {
+    return (
+      anio > limiteReciente.anio ||
+      (anio === limiteReciente.anio && mes >= limiteReciente.mes)
+    );
+  }
+  function enLimiteInferior() {
+    return (
+      anio < limiteAntiguo.anio ||
+      (anio === limiteAntiguo.anio && mes <= limiteAntiguo.mes)
+    );
+  }
+
+  function mesAnterior() {
+    if (enLimiteInferior()) return;
+    setAnioMes(mes === 1 ? { anio: anio - 1, mes: 12 } : { anio, mes: mes - 1 });
+  }
+  function mesSiguiente() {
+    if (enLimiteSuperior()) return;
+    setAnioMes(mes === 12 ? { anio: anio + 1, mes: 1 } : { anio, mes: mes + 1 });
+  }
+
+  // Elegir un día al azar (dentro del mes que se está viendo)
   function diaAleatorio() {
-    const disponibles = dias.filter((d) => d.estado === "sin-jugar");
+    const disponibles = diasDelMes.filter((d) => d.estado === "sin-jugar");
     if (disponibles.length === 0) return;
     const elegido = disponibles[Math.floor(Math.random() * disponibles.length)];
     onElegirDia(elegido.fecha);
@@ -51,9 +99,9 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
         </span>
       </div>
 
-      {/* Lista de días */}
+      {/* Lista de días del mes */}
       <div className="space-y-2">
-        {dias.map((d) => (
+        {diasDelMes.map((d) => (
           <div
             key={d.fecha}
             className="flex items-center gap-3 rounded-md p-2 bg-[var(--color-superficie2)] border border-white/10"
@@ -107,7 +155,30 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
         ))}
       </div>
 
-      {/* Jugar día aleatorio */}
+      {/* Navegación de mes */}
+      <div className="flex items-center justify-center gap-4 mt-6">
+        <button
+          onClick={mesAnterior}
+          disabled={enLimiteInferior()}
+          className="w-10 h-10 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          ‹
+        </button>
+
+        <span className="px-4 py-2 min-w-44 text-center rounded-md bg-[var(--color-superficie2)] border border-white/10 text-[var(--color-texto)] font-medium">
+          {NOMBRES_MES[mes - 1]} - {anio}
+        </span>
+
+        <button
+          onClick={mesSiguiente}
+          disabled={enLimiteSuperior()}
+          className="w-10 h-10 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          ›
+        </button>
+      </div>
+
+      {/* Jugar día aleatorio (dentro del mes visible) */}
       <button
         onClick={diaAleatorio}
         className="w-full mt-4 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"

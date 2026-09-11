@@ -37,13 +37,17 @@ body,
 #root {
   min-height: 100vh;
   margin: 0;
-  background: linear-gradient(
-    to bottom,
-    var(--color-fondo-alto) 0%,
-    var(--color-fondo-medio) 45%,
-    var(--color-fondo-bajo) 100%
-  );
-  background-attachment: fixed;
+  background-image:
+    url("./assets/asfalt-light.png"),
+    linear-gradient(
+      to bottom,
+      var(--color-fondo-alto) 0%,
+      var(--color-fondo-medio) 45%,
+      var(--color-fondo-bajo) 100%
+    );
+  background-repeat: repeat, no-repeat;
+  background-attachment: fixed, fixed;
+  background-blend-mode: overlay;
   color: var(--color-texto);
   font-family: var(--font-cuerpo);
 }

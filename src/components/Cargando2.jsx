@@ -1,8 +1,33 @@
+import { useState, useEffect, useRef } from "react";
 import roca from "../assets/roca.svg";
 import pico from "../assets/pico.svg";
 import gema from "../assets/gema.svg";
 
 export default function Cargando2({ mensaje = "Cargando…" }) {
+  // === ESTADO ===
+  const [tardando, setTardando] = useState(false);
+  const [destino, setDestino] = useState({ x: 46, y: -90 });
+  const gemaRef = useRef(null);
+
+  // === TEMPORIZADOR: aviso tras 15s ===
+  useEffect(() => {
+    const id = setTimeout(() => setTardando(true), 15000);
+    return () => clearTimeout(id);
+  }, []);
+
+  // === DIRECCIÓN ALEATORIA DE LA GEMA (cada ciclo de animación) ===
+  useEffect(() => {
+    function nuevaDireccion() {
+      const x = Math.round(-70 + Math.random() * 140); // -70 a 70
+      const y = Math.round(-110 + Math.random() * 30); // -110 a -80 (siempre hacia arriba)
+      setDestino({ x, y });
+    }
+
+    const el = gemaRef.current;
+    el?.addEventListener("animationiteration", nuevaDireccion);
+    return () => el?.removeEventListener("animationiteration", nuevaDireccion);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6">
       <style>{`
@@ -19,7 +44,7 @@ export default function Cargando2({ mensaje = "Cargando…" }) {
   @keyframes saltar {
     0%, 49% { transform: translate(0, 0) scale(0.3); opacity: 0; }
     52% { transform: translate(0, 0) scale(1); opacity: 1; }
-    90%, 100% { transform: translate(46px, -90px) scale(0.5); opacity: 0; }
+    90%, 100% { transform: translate(var(--gema-x), var(--gema-y)) scale(0.5); opacity: 0; }
   }
   .anim-pico { transform-origin: 75% 80%;
                animation: picar 1s ease-in-out infinite; }
@@ -34,9 +59,11 @@ export default function Cargando2({ mensaje = "Cargando…" }) {
           className="anim-roca absolute left-[-1px] bottom-[7px] w-[103px]"
         />
         <img
+          ref={gemaRef}
           src={gema}
           alt=""
           className="anim-gema absolute left-[68px] bottom-[65px] w-[41px]"
+          style={{ "--gema-x": `${destino.x}px`, "--gema-y": `${destino.y}px` }}
         />
         <img
           src={pico}
@@ -46,6 +73,13 @@ export default function Cargando2({ mensaje = "Cargando…" }) {
       </div>
 
       <p className="text-[var(--color-texto-suave)] text-sm">{mensaje}</p>
+
+      {tardando && (
+        <p className="text-[var(--color-texto-suave)] text-sm text-center max-w-xs opacity-80">
+          Parece que los minerales están más profundos de lo esperado, por
+          favor tenga paciencia.
+        </p>
+      )}
     </div>
   );
 }

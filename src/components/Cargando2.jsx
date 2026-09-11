@@ -3,10 +3,19 @@ import roca from "../assets/roca.svg";
 import pico from "../assets/pico.svg";
 import gema from "../assets/gema.svg";
 
+function direccionAleatoria() {
+  const angulo = Math.random() * 2 * Math.PI; // 0 a 360°
+  const radio = 70 + Math.random() * 30; // 70 a 100px de distancia
+  return {
+    x: Math.round(Math.cos(angulo) * radio),
+    y: Math.round(Math.sin(angulo) * radio),
+  };
+}
+
 export default function Cargando2({ mensaje = "Cargando…" }) {
   // === ESTADO ===
   const [tardando, setTardando] = useState(false);
-  const [destino, setDestino] = useState({ x: 46, y: -90 });
+  const [destino, setDestino] = useState(direccionAleatoria);
   const gemaRef = useRef(null);
 
   // === TEMPORIZADOR: aviso tras 15s ===
@@ -18,9 +27,7 @@ export default function Cargando2({ mensaje = "Cargando…" }) {
   // === DIRECCIÓN ALEATORIA DE LA GEMA (cada ciclo de animación) ===
   useEffect(() => {
     function nuevaDireccion() {
-      const x = Math.round(-70 + Math.random() * 140); // -70 a 70
-      const y = Math.round(-110 + Math.random() * 30); // -110 a -80 (siempre hacia arriba)
-      setDestino({ x, y });
+      setDestino(direccionAleatoria());
     }
 
     const el = gemaRef.current;

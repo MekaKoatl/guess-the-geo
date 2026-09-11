@@ -1,8 +1,18 @@
 import { useState } from "react";
 
 const NOMBRES_MES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 // === HELPER: extrae {anio, mes} de "YYYY-MM-DD" ===
@@ -54,11 +64,15 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
 
   function mesAnterior() {
     if (enLimiteInferior()) return;
-    setAnioMes(mes === 1 ? { anio: anio - 1, mes: 12 } : { anio, mes: mes - 1 });
+    setAnioMes(
+      mes === 1 ? { anio: anio - 1, mes: 12 } : { anio, mes: mes - 1 },
+    );
   }
   function mesSiguiente() {
     if (enLimiteSuperior()) return;
-    setAnioMes(mes === 12 ? { anio: anio + 1, mes: 1 } : { anio, mes: mes + 1 });
+    setAnioMes(
+      mes === 12 ? { anio: anio + 1, mes: 1 } : { anio, mes: mes + 1 },
+    );
   }
 
   // Elegir un día al azar (dentro del mes que se está viendo)
@@ -79,6 +93,14 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
         className="w-full mb-4 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
       >
         Regresa al juego del día de hoy
+      </button>
+
+      {/* Jugar día aleatorio (dentro del mes visible) */}
+      <button
+        onClick={diaAleatorio}
+        className="w-full mb-4 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
+      >
+        Jugar día aleatorio
       </button>
 
       {/* Leyenda */}
@@ -139,9 +161,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
                     : g.estado === "partial"
                       ? "bg-[var(--color-amarillo-borde)]"
                       : "bg-[var(--color-rojo-borde)]";
-                return (
-                  <span key={i} className={`w-6 h-6 rounded ${color}`} />
-                );
+                return <span key={i} className={`w-6 h-6 rounded ${color}`} />;
               })}
             </div>
 
@@ -177,14 +197,6 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
           ›
         </button>
       </div>
-
-      {/* Jugar día aleatorio (dentro del mes visible) */}
-      <button
-        onClick={diaAleatorio}
-        className="w-full mt-4 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
-      >
-        Jugar día aleatorio
-      </button>
     </div>
   );
 }

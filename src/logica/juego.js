@@ -14,6 +14,18 @@ export const norm = (s) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
+// === RENOMBRES DE ETIQUETAS DE PISTAS ===
+const RENOMBRES_PISTA = {
+  Dureza: "Tipo de dureza",
+  "Dureza (Mohs)": "Nivel de dureza (Mohs)",
+};
+
+export function renombrarPista(pista) {
+  const [etiqueta, ...resto] = pista.split(":");
+  const nueva = RENOMBRES_PISTA[etiqueta.trim()] || etiqueta;
+  return `${nueva}:${resto.join(":")}`;
+}
+
 // === COMPARACIÓN PARCIAL (amarillo) ===
 const CAMPOS = [
   { key: "familia", label: "Misma familia" },

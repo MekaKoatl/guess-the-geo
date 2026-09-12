@@ -21,6 +21,7 @@ import {
   puntoZoom,
   objetoDelDia,
   semillaDelDia,
+  renombrarPista,
 } from "../logica/juego";
 
 export function usePartida(fecha, sesion) {
@@ -43,7 +44,7 @@ export function usePartida(fecha, sesion) {
         const semilla = semillaDelDia(fecha);
         setMineral({
           ...obj,
-          pistas: ordenarPistas(obj, semilla),
+          pistas: ordenarPistas(obj, semilla).map(renombrarPista),
           origen: puntoZoom(semilla),
         });
 

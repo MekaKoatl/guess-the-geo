@@ -21,6 +21,21 @@ function anioMesDe(fecha) {
   return { anio, mes };
 }
 
+// === Genera la lista de meses disponibles, del más reciente al más antiguo ===
+function listaDeMeses(reciente, antiguo) {
+  const meses = [];
+  let { anio, mes } = reciente;
+  while (anio > antiguo.anio || (anio === antiguo.anio && mes >= antiguo.mes)) {
+    meses.push({ anio, mes });
+    mes -= 1;
+    if (mes === 0) {
+      mes = 12;
+      anio -= 1;
+    }
+  }
+  return meses;
+}
+
 export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
   const etiqueta = {
     "sin-jugar": "Aún sin jugar",
@@ -40,6 +55,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
   // dias[0] es el más reciente (hoy), el último es el más antiguo (lanzamiento)
   const limiteReciente = anioMesDe(dias[0]?.fecha || hoy);
   const limiteAntiguo = anioMesDe(dias[dias.length - 1]?.fecha || hoy);
+  const meses = listaDeMeses(limiteReciente, limiteAntiguo);
 
   // === MES QUE SE ESTÁ VIENDO ===
   const [{ anio, mes }, setAnioMes] = useState(anioMesDe(hoy));
@@ -75,6 +91,11 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
     );
   }
 
+  function alElegirMes(valor) {
+    const [a, m] = valor.split("-").map(Number);
+    setAnioMes({ anio: a, mes: m });
+  }
+
   // Elegir un día al azar (dentro del mes que se está viendo)
   function diaAleatorio() {
     const disponibles = diasDelMes.filter((d) => d.estado === "sin-jugar");
@@ -87,21 +108,21 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
     <div className="max-w-2xl mx-auto">
       <h1 className="text-4xl text-center mb-6">Días anteriores</h1>
 
-      {/* Volver a hoy */}
-      <button
-        onClick={onVolver}
-        className="w-full mb-4 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
-      >
-        Regresa al juego del día de hoy
-      </button>
-
-      {/* Jugar día aleatorio (dentro del mes visible) */}
-      <button
-        onClick={diaAleatorio}
-        className="w-full mb-4 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
-      >
-        Jugar día aleatorio
-      </button>
+      {/* Volver a hoy + día aleatorio, en la misma fila */}
+      <div className="flex gap-3 mb-4">
+        <button
+          onClick={onVolver}
+          className="flex-1 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
+        >
+          Regresa al juego del día de hoy
+        </button>
+        <button
+          onClick={diaAleatorio}
+          className="flex-1 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
+        >
+          Jugar día aleatorio
+        </button>
+      </div>
 
       {/* Leyenda */}
       <div className="flex justify-center gap-4 mb-4 text-sm text-[var(--color-texto-suave)]">
@@ -185,9 +206,17 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
           ‹
         </button>
 
-        <span className="px-4 py-2 min-w-44 text-center rounded-md bg-[var(--color-superficie2)] border border-white/10 text-[var(--color-texto)] font-medium">
-          {NOMBRES_MES[mes - 1]} - {anio}
-        </span>
+        <select
+          value={`${anio}-${mes}`}
+          onChange={(e) => alElegirMes(e.target.value)}
+          className="px-4 py-2 min-w-44 text-center rounded-md bg-[var(--color-superficie2)] border border-white/10 text-[var(--color-texto)] font-medium outline-none cursor-pointer"
+        >
+          {meses.map(({ anio: a, mes: m }) => (
+            <option key={`${a}-${m}`} value={`${a}-${m}`}>
+              {NOMBRES_MES[m - 1]} - {a}
+            </option>
+          ))}
+        </select>
 
         <button
           onClick={mesSiguiente}
@@ -195,6 +224,29 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
           className="w-10 h-10 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ›
+        </button>
+      </div>
+
+      {/* Navegación flotante: subir / bajar */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-20">
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Subir arriba"
+          className="w-11 h-11 rounded-full bg-[var(--color-fondo-alto)] hover:brightness-110 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold shadow-lg transition flex items-center justify-center"
+        >
+          ↑
+        </button>
+        <button
+          onClick={() =>
+            window.scrollTo({
+              top: document.body.scrollHeight,
+              behavior: "smooth",
+            })
+          }
+          aria-label="Bajar abajo"
+          className="w-11 h-11 rounded-full bg-[var(--color-fondo-alto)] hover:brightness-110 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold shadow-lg transition flex items-center justify-center"
+        >
+          ↓
         </button>
       </div>
     </div>

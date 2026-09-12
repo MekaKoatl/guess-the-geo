@@ -104,18 +104,24 @@ export default function App() {
     />
   );
   const bloqueIntentos = <GuessHistory guesses={guesses} />;
-  const bloquePistas = <HintPanel pistas={mineral.pistas} reveladas={fallos} />;
-  const bloqueResultado = estado !== "jugando" && (
+  const bloquePistas = (
     <>
-      <ResultCard objeto={mineral} estado={estado} intentos={guesses.length} />
-      <StatsPanel
-        stats={stats}
-        guesses={guesses}
-        gano={estado === "ganado"}
-        sesion={sesion}
-        fecha={fecha}
-      />
+      <HintPanel pistas={mineral.pistas} reveladas={fallos} />
+      {estado !== "jugando" && (
+        <div className="mt-4">
+          <StatsPanel
+            stats={stats}
+            guesses={guesses}
+            gano={estado === "ganado"}
+            sesion={sesion}
+            fecha={fecha}
+          />
+        </div>
+      )}
     </>
+  );
+  const bloqueResultado = estado !== "jugando" && (
+    <ResultCard objeto={mineral} estado={estado} intentos={guesses.length} />
   );
   const bloqueCountdown = <Countdown />;
 

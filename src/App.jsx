@@ -122,21 +122,15 @@ export default function App() {
     />
   );
   const bloqueIntentos = <GuessHistory guesses={guesses} />;
-  const bloquePistas = (
-    <>
-      <HintPanel pistas={mineral.pistas} reveladas={fallos} />
-      {estado !== "jugando" && (
-        <div className="mt-4">
-          <StatsPanel
-            stats={stats}
-            guesses={guesses}
-            gano={estado === "ganado"}
-            sesion={sesion}
-            fecha={fecha}
-          />
-        </div>
-      )}
-    </>
+  const bloquePistas = <HintPanel pistas={mineral.pistas} reveladas={fallos} />;
+  const bloqueEstadisticas = estado !== "jugando" && (
+    <StatsPanel
+      stats={stats}
+      guesses={guesses}
+      gano={estado === "ganado"}
+      sesion={sesion}
+      fecha={fecha}
+    />
   );
   const bloqueResultado = estado !== "jugando" && (
     <ResultCard objeto={mineral} estado={estado} intentos={guesses.length} />
@@ -159,6 +153,7 @@ export default function App() {
         buscador={bloqueBuscador}
         intentos={bloqueIntentos}
         pistas={bloquePistas}
+        estadisticas={bloqueEstadisticas}
         resultado={bloqueResultado}
         countdown={bloqueCountdown}
       />

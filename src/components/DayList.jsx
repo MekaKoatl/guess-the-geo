@@ -105,7 +105,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto pb-24">
       <h1 className="text-4xl text-center mb-6">Días anteriores</h1>
 
       {/* Volver a hoy + día aleatorio, en la misma fila */}
@@ -147,7 +147,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
         {diasDelMes.map((d) => (
           <div
             key={d.fecha}
-            className="flex items-center gap-3 rounded-md p-2 bg-[var(--color-superficie2)] border border-white/10"
+            className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-md p-2 bg-[var(--color-superficie2)] border border-white/10"
           >
             {/* Botón "Jugar día" */}
             <button
@@ -163,7 +163,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
             </button>
 
             {/* Cuadraditos de intentos */}
-            <div className="flex gap-1">
+            <div className="flex gap-1 justify-center sm:justify-start">
               {Array.from({ length: 6 }).map((_, i) => {
                 const g = d.guesses[i];
                 if (!g) {
@@ -188,7 +188,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
 
             {/* Etiqueta de estado */}
             <span
-              className={`text-sm w-24 text-center font-medium ${colorEtiqueta[d.estado]}`}
+              className={`text-sm sm:w-24 text-center font-medium ${colorEtiqueta[d.estado]}`}
             >
               {etiqueta[d.estado]}
             </span>
@@ -228,7 +228,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
       </div>
 
       {/* Navegación flotante: subir / bajar */}
-      <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-20">
+      <div className="fixed bottom-4 right-3 flex flex-col gap-2 z-20">
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="Subir arriba"

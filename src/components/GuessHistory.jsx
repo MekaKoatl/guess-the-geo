@@ -2,7 +2,7 @@ import GuessCard from './GuessCard'
 
 export default function GuessHistory({ guesses = [] }) {
   return (
-    <aside className="self-start">
+    <aside className="self-start w-full">
       {guesses.length > 0 && (
         <>
           <h2 className="text-lg font-semibold mb-3 text-[var(--color-texto)]">Intentos</h2>

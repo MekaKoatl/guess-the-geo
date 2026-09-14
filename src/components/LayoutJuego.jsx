@@ -4,6 +4,7 @@ export default function LayoutJuego({
   buscador,
   intentos,
   pistas,
+  estadisticas,
   resultado,
   countdown,
 }) {
@@ -14,16 +15,20 @@ export default function LayoutJuego({
         {imagen}
         {hexagonos}
         {buscador}
-        {intentos}
-        {pistas}
         {resultado && <div className="space-y-4">{resultado}</div>}
+        {estadisticas}
+        {pistas}
+        {intentos}
         {countdown}
       </div>
 
       {/* ===== ESCRITORIO: tres columnas ===== */}
       <div className="hidden lg:flex lg:justify-center gap-6 max-w-6xl mx-auto">
-        {/* Pistas */}
-        <div className="w-80 shrink-0">{pistas}</div>
+        {/* Pistas + estadísticas */}
+        <div className="w-80 shrink-0 space-y-4">
+          {pistas}
+          {estadisticas}
+        </div>
 
         {/* Juego */}
         <main className="max-w-md w-full">

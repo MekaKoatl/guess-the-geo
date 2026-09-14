@@ -21,13 +21,13 @@ export default function StepTracker({ guesses = [], maxIntentos = 6 }) {
         return (
           <div
             key={i}
-            className={`relative transition-transform ${esActual ? "w-15 h-15" : "w-14 h-14"}`}
+            className={`relative aspect-square transition-transform ${esActual ? "w-14 scale-110" : "w-12"}`}
           >
             {/* Hexágono */}
             <img
               src={imagen}
               alt={`Intento ${i + 1}`}
-              className="w-full h-full"
+              className="w-full h-full object-contain"
             />
             {/* Número encima */}
             <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-[var(--color-texto-oscuro)]">

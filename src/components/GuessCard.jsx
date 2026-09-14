@@ -19,7 +19,7 @@ export default function GuessCard({ nombre, estado, similares = [], imagen }) {
   return (
     <div className="flex overflow-hidden rounded-md h-24 shadow-sm">
       {/* Imagen a la izquierda */}
-      <div className="w-1/3 bg-neutral-800 shrink-0">
+      <div className="w-2/5 bg-neutral-800 shrink-0">
         {imagen && (
           <img
             src={imagen}

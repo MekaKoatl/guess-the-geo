@@ -10,6 +10,8 @@ import StatsPanel from "./components/StatsPanel";
 import AuthPanel from "./components/AuthPanel";
 import DayList from "./components/DayList";
 import SharePage from "./components/SharePage";
+import RestablecerPage from "./components/RestablecerPage";
+import OlvidePasswordPanel from "./components/OlvidePasswordPanel";
 import LayoutJuego from "./components/LayoutJuego";
 import BarraSuperior from "./components/BarraSuperior";
 import Cargando from "./components/Cargando";
@@ -24,6 +26,7 @@ export default function App() {
   const [fecha, setFecha] = useState(fechaHoy());
   const [vista, setVista] = useState("juego");
   const [mostrarAuth, setMostrarAuth] = useState(false);
+  const [mostrarOlvido, setMostrarOlvido] = useState(false);
   const { sesion, iniciar, cerrar: cerrarSesion } = useSesion();
   const { datos, error, mineral, guesses, estado, stats, intentar, cargando } =
     usePartida(fecha, sesion);
@@ -31,6 +34,8 @@ export default function App() {
   // Detectar si la URL es /share/:username/:fecha
   const partesURL = window.location.pathname.split("/").filter(Boolean);
   const esVistaCompartir = partesURL[0] === "share" && partesURL.length >= 3;
+  const esVistaRestablecer =
+    partesURL[0] === "restablecer" && partesURL.length >= 2;
 
   async function alIniciarSesion(token, user) {
     await iniciar(token, user);
@@ -48,6 +53,19 @@ export default function App() {
       <SharePage
         username={partesURL[1]}
         fecha={partesURL[2]}
+        onVolver={() => {
+          window.history.pushState({}, "", "/");
+          window.location.reload();
+        }}
+      />
+    );
+  }
+
+  // === VISTA DE RESTABLECER CONTRASEÑA (URL /restablecer/:token) ===
+  if (esVistaRestablecer) {
+    return (
+      <RestablecerPage
+        token={partesURL[1]}
         onVolver={() => {
           window.history.pushState({}, "", "/");
           window.location.reload();
@@ -149,6 +167,20 @@ export default function App() {
         <AuthPanel
           onSesion={alIniciarSesion}
           onCerrar={() => setMostrarAuth(false)}
+          onOlvidoPassword={() => {
+            setMostrarAuth(false);
+            setMostrarOlvido(true);
+          }}
+        />
+      )}
+
+      {mostrarOlvido && (
+        <OlvidePasswordPanel
+          onCerrar={() => setMostrarOlvido(false)}
+          onVolverLogin={() => {
+            setMostrarOlvido(false);
+            setMostrarAuth(true);
+          }}
         />
       )}
     </div>

@@ -27,6 +27,7 @@ Puedes jugar sin registrarte (modo invitado). Si quieres probar las cuentas con 
 - Buscador con autocompletado.
 - Se puede jugar días anteriores.
 - Cuentas de usuario opcionales con progreso sincronizado.
+- Recuperación de contraseña por correo (en modo demo el envío está limitado a la dirección registrada en Resend; en producción requiere un dominio propio verificado).
 - Estadísticas y racha (en el navegador o en la nube si inicias sesión).
 - Compartir resultado.
 
@@ -70,6 +71,7 @@ React 19 · Vite · Tailwind CSS 4 · Node · Express · MongoDB · Datos de Wik
 - Autocomplete search.
 - Playable previous days.
 - Optional user accounts with synced progress.
+- Password recovery by email (in demo mode, sending is limited to the address registered in Resend; production requires a verified custom domain).
 - Stats and streak (in the browser, or in the cloud when logged in).
 - Share your result.
 

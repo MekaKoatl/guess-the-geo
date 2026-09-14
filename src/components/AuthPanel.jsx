@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { iniciarSesion, registrar } from "../api/backend";
 
-export default function AuthPanel({ onSesion, onCerrar }) {
+export default function AuthPanel({ onSesion, onCerrar, onOlvidoPassword }) {
   const [modo, setModo] = useState("login");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -68,9 +68,7 @@ export default function AuthPanel({ onSesion, onCerrar }) {
           />
         </div>
 
-        {error && (
-          <p className="text-sm text-red-300 mt-2">{error}</p>
-        )}
+        {error && <p className="text-sm text-red-300 mt-2">{error}</p>}
 
         <button
           onClick={enviar}
@@ -79,6 +77,15 @@ export default function AuthPanel({ onSesion, onCerrar }) {
         >
           {cargando ? "..." : modo === "login" ? "Entrar" : "Registrarse"}
         </button>
+
+        {modo === "login" && (
+          <button
+            onClick={onOlvidoPassword}
+            className="w-full text-center text-sm mt-2 underline text-[var(--color-texto-suave)] hover:text-[var(--color-borde-punteado)]"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        )}
 
         <p className="text-sm text-center mt-3 text-[var(--color-texto-suave)]">
           {modo === "login" ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?"}{" "}

@@ -76,3 +76,17 @@ export function importarStatsBackend(token, stats) {
   });
 }
 
+// --- RECUPERACIÓN DE CONTRASEÑA ---
+export function olvidePassword(email) {
+  return pedir("/api/auth/olvide-password", {
+    metodo: "POST",
+    body: { email },
+  });
+}
+
+export function restablecerPassword(token, password) {
+  return pedir("/api/auth/restablecer-password", {
+    metodo: "POST",
+    body: { token, password },
+  });
+}

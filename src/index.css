@@ -65,3 +65,71 @@ h3 {
   font-family: var(--font-cuerpo);
   font-weight: 600;
 }
+
+/* === Botón estilo "roca" (borde continuo, oscuro) === */
+.boton-roca {
+  background: linear-gradient(to bottom, #3a3028, #2a221a);
+  border: 2px solid #1a1510;
+  border-radius: 0.5rem;
+  color: var(--color-texto);
+  font-weight: 500;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: filter 0.15s, transform 0.05s;
+}
+.boton-roca:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+.boton-roca:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.boton-roca:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Variante del botón roca que conserva su propio color de fondo */
+.boton-roca-oscuro {
+  border: 2px solid #1a1510;
+  color: var(--color-texto);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: filter 0.15s, transform 0.05s;
+}
+.boton-roca-oscuro:hover:not(:disabled) {
+  filter: brightness(1.3);
+}
+.boton-roca-oscuro:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* === Panel estilo "roca" (pistas) === */
+.panel-roca {
+  background: linear-gradient(to bottom, #2b3340, #1c222c);
+  border: 2px solid #12100d;
+  border-radius: 0.5rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* === Tarjeta de intento estilo "roca" (conserva colores de estado) === */
+.tarjeta-roca {
+  border: 2px solid #12100d;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* === Relieve tipo roca sobre el color de estado === */
+.relieve-roca {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.25),
+    rgba(0, 0, 0, 0.18)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+}

@@ -145,6 +145,8 @@ export default function App() {
         onCuentaEliminada={cerrarSesion}
         onAbrirAuth={() => setMostrarAuth(true)}
         onVerListado={() => setVista("listado")}
+        esDiaAnterior={fecha !== fechaHoy()}
+        onVolverHoy={() => setFecha(fechaHoy())}
       />
 
       <LayoutJuego

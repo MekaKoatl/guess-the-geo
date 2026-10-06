@@ -43,11 +43,11 @@ export default function GuessForm({ onGuess, opciones = [], usados = [] }) {
           }}
           onKeyDown={(e) => e.key === "Enter" && enviar()}
           placeholder="Escribe y elige de la lista…"
-          className="flex-1 px-3 py-2 bg-transparent text-[var(--color-texto-oscuro)] placeholder:text-[#5a4d3d] outline-none"
+          className="flex-1 min-w-0 px-3 py-2 bg-transparent text-[var(--color-texto-oscuro)] placeholder:text-[#5a4d3d] outline-none"
         />
         <button
           onClick={() => enviar()}
-          className="px-4 bg-[#2a2418] hover:bg-[#3a3428] text-[var(--color-texto)]"
+          className="boton-roca-oscuro bg-[#2a2418] shrink-0 w-28 flex items-center justify-center"
         >
           Submit
         </button>

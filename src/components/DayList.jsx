@@ -112,13 +112,13 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
       <div className="flex gap-3 mb-4">
         <button
           onClick={onVolver}
-          className="flex-1 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
+          className="boton-roca flex-1 py-3"
         >
           Regresa al juego del día de hoy
         </button>
         <button
           onClick={diaAleatorio}
-          className="flex-1 py-3 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-medium transition"
+          className="boton-roca flex-1 py-3"
         >
           Jugar día aleatorio
         </button>
@@ -201,7 +201,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
         <button
           onClick={mesAnterior}
           disabled={enLimiteInferior()}
-          className="w-10 h-10 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+          className="boton-roca w-10 h-10 font-bold"
         >
           ‹
         </button>
@@ -221,7 +221,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
         <button
           onClick={mesSiguiente}
           disabled={enLimiteSuperior()}
-          className="w-10 h-10 rounded-md bg-[var(--color-borde-punteado)]/20 hover:bg-[var(--color-borde-punteado)]/30 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+          className="boton-roca w-10 h-10 font-bold"
         >
           ›
         </button>
@@ -232,7 +232,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="Subir arriba"
-          className="w-11 h-11 rounded-full bg-[var(--color-fondo-alto)] hover:brightness-110 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold shadow-lg transition flex items-center justify-center"
+          className="boton-roca w-11 h-11 !rounded-full font-bold flex items-center justify-center"
         >
           ↑
         </button>
@@ -244,7 +244,7 @@ export default function DayList({ dias, hoy, onElegirDia, onVolver }) {
             })
           }
           aria-label="Bajar abajo"
-          className="w-11 h-11 rounded-full bg-[var(--color-fondo-alto)] hover:brightness-110 border-2 border-dashed border-[var(--color-borde-punteado)] text-[var(--color-texto)] font-bold shadow-lg transition flex items-center justify-center"
+          className="boton-roca w-11 h-11 !rounded-full font-bold flex items-center justify-center"
         >
           ↓
         </button>

@@ -69,7 +69,7 @@ export default function Cargando2({ mensaje = "Cargando…" }) {
           ref={gemaRef}
           src={gema}
           alt=""
-          className="anim-gema absolute left-[52px] bottom-[95px] w-[41px]"
+          className="anim-gema absolute left-[30px] bottom-[38px] w-[41px]"
           style={{ "--gema-x": `${destino.x}px`, "--gema-y": `${destino.y}px` }}
         />
         <img

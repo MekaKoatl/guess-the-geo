@@ -16,7 +16,7 @@ export default function HintPanel({ pistas = [], reveladas = 0 }) {
           {visibles.map((pista, i) => (
             <div
               key={i}
-              className="rounded-md p-3 bg-[#1e2a3a] border-2 border-dashed border-[var(--color-borde-punteado)]"
+              className="panel-roca p-3"
             >
               <p className="text-xs text-[var(--color-texto)] opacity-60 mb-0.5">
                 Pista {i + 1}:

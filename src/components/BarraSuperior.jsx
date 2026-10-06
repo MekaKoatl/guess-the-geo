@@ -6,6 +6,8 @@ export default function BarraSuperior({
   onCuentaEliminada,
   onAbrirAuth,
   onVerListado,
+  esDiaAnterior,
+  onVolverHoy,
 }) {
   return (
     <header className="text-center mb-4">
@@ -33,6 +35,14 @@ export default function BarraSuperior({
           Días anteriores
         </button>
       </nav>
+            {esDiaAnterior && (
+        <button
+          onClick={onVolverHoy}
+          className="boton-roca px-4 py-2 mt-3 text-sm"
+        >
+          ↩ Volver al día de hoy
+        </button>
+      )}
     </header>
   );
 }

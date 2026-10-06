@@ -17,7 +17,7 @@ export default function GuessCard({ nombre, estado, similares = [], imagen }) {
           };
 
   return (
-    <div className="flex overflow-hidden rounded-md h-24 shadow-sm">
+    <div className="tarjeta-roca flex overflow-hidden h-24">
       {/* Imagen a la izquierda */}
       <div className="w-2/5 bg-neutral-800 shrink-0">
         {imagen && (
@@ -31,7 +31,7 @@ export default function GuessCard({ nombre, estado, similares = [], imagen }) {
 
       {/* Derecha: nombre + coincidenias, todo centrado vertical */}
       <div
-        className={`flex-1 border- px-3 py-2 flex flex-col justify-center text-[var(--color-texto-oscuro)] ${estilo.fondo} ${estilo.borde}`}
+       className={`relieve-roca flex-1 px-3 py-2 flex flex-col justify-center text-[var(--color-texto-oscuro)] ${estilo.fondo}`}
       >
         <p className="text-lg leading-tight truncate">{nombre}</p>
 
